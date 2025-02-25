@@ -1,0 +1,2304 @@
+---
+title: "Analysis Of The Membership Transformation Project"
+author: "Amrita Jena and Chihhui Wang"
+date: "2024-09-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(stringr)
+library(wordcloud)
+library(RColorBrewer)
+library(wordcloud2)
+```
+
+This Rmd file is used to store and explore our dataset. 
+
+# Data cleaning process
+
+### Initial step: 
+
+1. Read data, 
+2. Remove empty columns and rows 
+3. Organize the format of data: rename the variables name
+
+```{r}
+# Read data from Excel
+data <- read_xlsx("../data/2024_membership_data.xlsx", sheet = 1)
+
+# Remove empty column and row
+data <- data[-3, ]  # Remove the third row if it's empty
+data <- data[, -4]  # Remove the fourth column if it's empty
+
+# Rename all the variable names 
+names(data) <- c("ID", "Start_Date", "End_Date", "Q1_1", "Q1_2", "Q1_3", "Q1_4", "Q1_5", "Q1_6", 
+                  "Q1_7", "Q1_8", "Q2", "Q3_1", "Q3_2", "Q3_3", "Q3_4", "Q3_5", "Q3_6", "Q4", 
+                  "Q5_1", "Q5_2", "Q6A", "Q6A_2", "Q6B_1", "Q6B_2", "Q6B_3", "Q6B_4", 
+                  "Q7", "Q8", "Q9", "Q10_1", "Q10_2", "Q10_3", "Q10_4", "Q10_5", "Q10_6", 
+                  "Q10_7", "Q10_8", "Q11_1", "Q11_2", "Q11_3", "Q11_4", "Q11_5", "Q11_6", 
+                  "Q11_7", "Q11_8", "Q11_9", "Q11_10", "Q11_11", "Q11_12", "Q12", "Q13")
+
+# Remove the first two rows (if necessary)
+data <- data[-c(1:2), ]
+```
+
+### Combine some variables(if can)
+
+```{r}
+# Combine Q6B columns into a single column named Q6B
+data_combined <- data %>%
+  mutate(Q6B = coalesce(Q6B_1, Q6B_2, Q6B_3, Q6B_4)) %>%
+  select(ID, Start_Date, End_Date, everything(), Q6B) %>%
+  select(-starts_with("Q6B_")) %>%
+  select(ID, Start_Date, End_Date, Q1_1:Q1_8, Q2, Q3_1:Q3_6, Q4, Q5_1:Q5_2, Q6A, Q6B, Q7:Q13)
+
+```
+
+### Rename all the observations(answers)
+
+```{r}
+
+# Rename Q1 and Q2 options to proper variable name
+
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Free entry to places and sites cared for by Heritage New Zealand Pouhere Taonga",
+        "free_entry_NZ"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Free entry to international heritage places in the United Kingdom, Australia, Italy etc.", 
+        "free_entry_oversea"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Knowing your membership helps to protect heritage", 
+        "protection"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Heritage New Zealand magazine", 
+        "magazine"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Members Club monthly e-newsletter", 
+        "newsletter"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Heritage events and get-togethers with other members", 
+        "events"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Information about heritage places and sites via video", 
+        "video_info"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Discounts on retail products, heritage services and accommodation", 
+        "discounts"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Free entry to Heritage New Zealand Pouhere Taonga places and sites",
+        "free_entry_NZ")))
+
+
+# Rename Q3 option to proper variable name
+
+data_combined <- data_combined %>%
+   mutate(across(everything(), ~ str_replace_all(.x, 
+        "Monthly membership payments", 
+        "monthly_membership"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Combined monthly/annual membership and donation", 
+        "membership_donation"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "More content for families", 
+        "family_content"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Member handbook with property information, maps, and related details", 
+        "member_handbook"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Volunteering opportunities", 
+        "volunteering_opportunities"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "More local/regional information, events and activities", 
+        "local_info_events")))
+
+
+# Rename Q5 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "The existing categories suit me.", 
+        "suit"))) 
+
+# Rename Q6 (A) option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "I would prefer a digital magazine, at a lesser cost to me and the environment.", 
+        "digital"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "I would pay more to keep receiving physical magazines.", 
+        "physical"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "The magazine is not an important benefit to me.", 
+        "not_important"))) 
+
+# Rename Q6 (B) option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "One edition per year", 
+        "1"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Two editions per year \\(every 6 months\\)", 
+        "2"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Three editions per year \\(every 4 months\\)", 
+        "3"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Four editions per year \\(every 3 months\\)", 
+        "4")))
+
+
+# Rename Q7 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Joint Senior Citizen", 
+        "senior_citizen(Joint)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Senior Citizen", 
+        "senior_citizen"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "I'm not sure", 
+        "not_sure"))) %>%
+   mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Student \\(full-time\\)", 
+        "student"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Joint Life", 
+        "life(joint)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Life", 
+        "life"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Individual", 
+        "individual"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Family", 
+        "family")))
+ 
+
+  
+
+# Rename Q9 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "0 Very dissatisfied", 
+        "0"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "10 Very satisfied", 
+        "10"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "5 Neither satisfied or dissatisfied", 
+        "5"))) 
+
+# Rename Q10 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Visited a heritage place managed by Heritage New Zealand Pouhere Taonga", 
+        "visit_heritage"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Visited a heritage place managed by another organisation in New Zealand", 
+        "visit_heritage(other_org)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Visited a heritage place or attraction overseas", 
+        "visit_heritage(overseas)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Bought something from an Heritage New Zealand Pouhere Taonga shop/online store", 
+        "buy_from_shop"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Bought something from an Heritage New Zealand Pouhere Taonga cafÃ©", 
+        "buy_from_cafe"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Attended an event with Heritage New Zealand Pouhere Taonga", 
+        "attend_event"))) %>%
+ mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Attended a cultural event \\(opera, ballet, kapa haka, etc\\.\\)", 
+        "attend_cultural_event")))%>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Watched a Heritage New Zealand Pouhere Taonga video", 
+        "watch_video")))
+
+
+# Rename Q11 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Social media", 
+        "social_media"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Online news websites or apps", 
+        "website/app"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "On demand television", 
+        "on_demand_tv"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Subscription streaming services", 
+        "streaming"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Newspapers", 
+        "newspapers"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Magazines", 
+        "magazines"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Television", 
+        "television"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Podcasts", 
+        "podcasts"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Radio", 
+        "radio")))%>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "e-newsletters", 
+        "e_newsletters"))) 
+
+
+
+# Rename Q13 option option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "I acknowledge and agree to the above.", 
+        "agree"))) 
+```
+
+### Convert the data type 
+
+```{r}
+
+# Convert "ID" to numeric, "Start_Date" and "End_Date" to Date, and other columns to numeric
+# Convert Start_Date and End_Date to POSIXct
+data_combined <- data_combined %>%
+  mutate(
+    Start_Date = as.POSIXct(trimws(Start_Date), format = "%m/%d/%Y %I:%M:%S %p"),
+    End_Date = as.POSIXct(trimws(End_Date), format = "%m/%d/%Y %I:%M:%S %p"),
+    ID = as.numeric(ID),
+    Q4 = as.numeric(Q4),
+    Q6B = as.integer(Q6B),
+    Q9 = as.numeric(Q9),
+    Q12 = as.numeric(Q12),
+  )
+
+
+
+# Check the structure again to confirm the changes
+str(data_combined)
+
+# Preview the first few rows
+head(data_combined)
+
+
+```
+
+
+To ensure the robustness of our analysis and confirm that we can proceed with Exploratory Data Analysis (EDA), we conducted additional checks on the dataset:
+
+**Missing and Infinite Values:**
+
+checked for missing (NA), Not a Number (NaN), and infinite (Inf) values in the relevant columns. The checks returned 0 for all, indicating that the dataset is clean and free of these values.
+
+
+**Duplicate Entries:**
+
+searched for duplicate IDs and exact duplicate rows. No duplicates were found, confirming that each entry in the dataset is unique.
+
+These preliminary checks verified that the data is suitable for moving forward with EDA.
+
+
+```{r , warning = FALSE}
+# Check for NA, NaN, and Inf values in the column
+sum(is.na(data_combined$column_name))  # Number of NA values
+sum(is.nan(data_combined$column_name)) # Number of NaN values
+sum(is.infinite(data_combined$column_name)) # Number of Inf values
+
+# Find duplicate IDs
+duplicate_ids <- data_combined[duplicated(data_combined$ID), ]
+duplicate_ids
+
+# Find and display duplicate rows
+duplicates <- data_combined[duplicated(data_combined), ]
+duplicates
+
+# Count the number of duplicate rows
+sum(duplicated(data_combined))
+
+# Replace missing values with the median of the column
+clean_data <- data_combined$column_name
+clean_data[is.na(clean_data)] <- median(clean_data, na.rm = TRUE)
+
+```
+
+### Save our data into csv for further use
+
+```{r, eval=FALSE}
+write.csv(data_combined, file = "../data/data_combined.csv", row.names = FALSE)
+```
+
+
+# Exploratory Data Analysis (EDA)
+
+### Check the NA and data type 
+
+```{r}
+library(visdat)
+library(forcats)
+vis_dat(data_combined)
+```
+
+### Section one questions (Question one to three)
+```{r}
+# Q1 and Q2
+data_long <- data_combined %>%
+  select(Q1_1:Q2) %>%
+  pivot_longer(cols = Q1_1:Q2, names_to = "Question", values_to = "Response")
+
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(title = "Frequency of Responses for Q1 and Q2",
+       x = "Questions",
+       y = "Count of Responses") +
+  theme_minimal()
+
+# Q3 
+
+data_long <- data_combined %>%
+  select(Q3_1:Q3_6) %>%
+  pivot_longer(cols = Q3_1:Q3_6, names_to = "Question", values_to = "Response")
+
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(title = "Frequency of Responses for Q3",
+       x = "Questions",
+       y = "Count of Responses") +
+  theme_minimal()
+
+```
+
+
+### Section two questions (Question four to six) 
+
+```{r}
+# Box plot for the price range
+# Cannot see to much detail here
+data_combined %>% 
+  ggplot(aes(x=Q4)) +
+  geom_boxplot()
+
+# Distribution of price range
+data_combined %>% 
+  ggplot(aes(x=Q4)) +
+  geom_density() +
+  theme_bw()
+```
+
+
+```{r}
+# Library
+library(tidyverse)
+
+# Step 1: Create the density plot object
+density_plot <- data_combined %>%
+  ggplot(aes(x = Q4)) +
+  geom_density(fill = "lightblue", alpha = 0.4)
+
+# Step 2: Extract the density data from the plot
+density_data <- ggplot_build(density_plot)$data[[1]]
+
+# Step 3: Plot density with lollipop chart
+density_plot + 
+  geom_segment(data = density_data, aes(x = x, xend = x, y = 0, yend = y), 
+               color = "gray", linetype = "dashed") + # Add lollipop lines
+  
+  geom_point(data = density_data, aes(x = x, y = y), 
+             size = 4, color = "red", fill = "orange", shape = 21, stroke = 1.5) + # Add lollipop heads
+  
+  theme_bw() +
+  labs(title = "Density Plot with Lollipop Chart", x = "Q4 (Price Range)", y = "Density")
+
+```
+
+
+Q5_1: We currently offer the below membership categories.
+- Family (two adults at same address, including any school-age children)
+- Individual
+- Joint Senior Citizen (retired, 65 years or over, plus one other person at same address)
+- Senior Citizen (retired person 65 years or over)
+- Student (full time)
+
+```{r}
+# Q5
+data_combined %>%
+  mutate(observation_status = case_when(
+    is.na(Q5_1) ~ "NA",
+    Q5_1 == "suit" ~ "suit"
+  )) %>%
+  count(observation_status) %>%
+  ggplot(aes(x = "", y = n, fill = observation_status)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  labs(title = "Proportion of 'suit' and NA Observations",
+       fill = "Observation Status") +
+  geom_text(aes(label = n), 
+            position = position_stack(vjust = 0.5)) +
+  theme_minimal() 
+```
+
+Then, after calculating the 29 NA responses from Q5_1, will those respondents also answer Q5_2?
+Yes, all they answered. 
+
+Q5_2: If not, I would like a category that: (Open question)
+
+So far we know the member categories contain:
+- Family (two adults at same address, including any school-age children)
+- Individual
+- Joint Senior Citizen (retired, 65 years or over, plus one other person at same address)
+- Senior Citizen (retired person 65 years or over)
+- Student (full time)
+
+They forgot include some option in Q5_1?
+- Life
+
+That why many peolple answer "Life"? 
+Also and some people answer repeat category. 
+
+Need to manually deal those answers?
+
+```{r}
+# Q5
+data_combined %>%
+  select(Q5_2) %>%
+  filter(!is.na(Q5_2)) %>%  
+  as_tibble()
+```
+
+### Section three question (Question seven to twelve) 
+
+```{r}
+table(data_combined$Q6B, useNA = "ifany")
+```
+
+```{r}
+data_long <- data_combined %>%
+  select(Q10_1:Q10_8) %>%
+  pivot_longer(cols = Q10_1:Q10_8, names_to = "Question", values_to = "Response")
+
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(title = "Frequency of Responses for Q10",
+       x = "Questions",
+       y = "Count of Responses") +
+  theme_minimal()
+```
+
+```{r}
+data_long <- data_combined %>%
+  select(Q11_1:Q11_12) %>%
+  pivot_longer(cols = Q11_1:Q11_11, names_to = "Question", values_to = "Response")
+
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(title = "Frequency of Responses for Q11",
+       x = "Questions",
+       y = "Count of Responses") +
+  theme_minimal()
+```
+
+```{r}
+data_combined %>%
+  select(Q12) %>%
+  ggplot(aes(x = Q12)) +
+  geom_bar() + 
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +  
+  theme_minimal()
+```
+
+# Analysis
+
+
+#### Unique responses for first three questions
+
+```{r}
+# Frequency distribution for Q1
+q1_distribution <- table(data_combined$Q1)
+q1_distribution
+
+# Frequency distribution for Q2
+q2_distribution <- table(data_combined$Q2)
+q2_distribution
+
+# Frequency distribution for Q3
+q3_distribution <- table(data_combined$Q3)
+q3_distribution
+
+```
+
+#### Understand the Membership Type Composition (will use in presentation)
+
+```{r}
+library(RColorBrewer)
+library(ggrepel)
+
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  group_by(Q7) %>%
+  summarise(Count = n()) %>%
+  mutate(Proportion = Count / sum(Count) * 100) %>%
+  rename(Category = Q7)
+
+df_summary <- df_summary %>%
+  arrange(desc(Count)) %>%
+  mutate(Category = factor(Category, levels = Category)) 
+
+
+
+ggplot(df_summary, aes(x = "", y = Proportion, fill = Category)) + 
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  geom_text(aes(y = Proportion, label = paste0(round(Proportion, 1), "%")), 
+            color = "black", position = position_stack(vjust = 0.5)) +  
+  labs(title = "Pie Chart of Membership Types", fill = "Membership Type") +
+  scale_fill_brewer(palette = "Set2") + 
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+
+#### Willingness to Pay: Uncovering Value Perception
+
+```{r}
+
+df_summary <- data_combined %>%
+  mutate(Q7 = case_when(
+    Q7 %in% c("life", "life(joint)") ~ "life",  # Combine life categories
+    Q7 %in% c("senior_citizen", "senior_citizen(Joint)") ~ "senior_citizen",  # Combine senior_citizen categories
+    TRUE ~ Q7  # Keep other values unchanged
+  ))
+
+# Create the summary data frame if not done already
+df_summary <- df_summary %>%
+  group_by(Q4, Q7) %>%
+  summarise(Count = n(), .groups = 'drop') %>%
+  arrange(Q4)
+
+# Calculate cumulative count for each price point without the Q7 dependency
+df_summary_cumulative <- data_combined %>%
+  group_by(Q4) %>%
+  summarise(CumulativeCount = n(), .groups = 'drop')
+
+
+# Create the stacked bar chart with cumulative line
+ggplot() +
+  geom_bar(data = df_summary, aes(x = Q4, y = Count, fill = Q7), 
+           stat = "identity", width = 0.7) +  # Stacked bars
+  geom_line(data = df_summary_cumulative, aes(x = Q4, y = CumulativeCount), 
+            color = "black", group = 1) +  # Cumulative line
+  geom_point(data = df_summary_cumulative, aes(x = Q4, y = CumulativeCount), 
+            color = "black", group = 1) + 
+  labs(title = "Stacked Bar Chart of Prices by Membership Type",
+       x = "Price (Q4)",
+       y = "Count",
+       fill = "Membership Type") +  # Legend title
+  scale_fill_brewer(palette = "Set3") +  # Use a color palette
+  scale_x_continuous(breaks = seq(min(df_summary$Q4), max(df_summary$Q4), by = 1)) +  # Set x-axis breaks
+  theme_light() +  # A clean theme with light background
+  theme(axis.text.x = element_text(size = 10),  # Adjust x-axis text
+        axis.text.y = element_text(size = 10),  # Adjust y-axis text
+        plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))  # Center title
+```
+
+
+#### Understanding What Member Care About Most?
+
+```{r}
+# Calculate the counts and proportions of each category
+df_summary <- data_combined %>%
+  group_by(Q2) %>%
+  summarise(Count = n()) %>%
+  mutate(Proportion = Count / sum(Count) * 100)
+
+df_summary <- df_summary %>%
+  arrange(desc(Count)) %>%
+  mutate(Q2 = factor(Q2, levels = Q2)) 
+
+# Bar chart 
+ggplot(df_summary, aes(x = Q2, y = Count, fill = Q2)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(round(Proportion, 1), "%")), 
+            vjust = -0.5, size = 4) +  # Adjusts the label position
+  labs(title = "Category Distribution Bar Chart", x = "Category", y = "Proportion (%)") +
+  theme_minimal() +  # Applies a clean theme
+  theme(legend.position = "none"
+        )  # Rotate x-axis labels
+```
+
+
+What do you value about your membership that makes you want to renew? 
+```{r}
+wordcloud(
+  words = data_combined$Q8,
+  min.freq = 1,
+  max.words = 100,
+  random.order = FALSE,
+  colors = brewer.pal(8, "Set2") 
+)
+```
+
+
+#### Physical or Digital Magazine? Understanding Format and Frequency Preferences
+
+```{r}
+# Load the necessary package if not already loaded
+library(forcats)
+
+df_summary <- data_combined %>%
+  rename(prefer_magazine_type = Q6A) %>%  
+  mutate(prefer_magazine_type = case_when(
+    prefer_magazine_type == "digital" ~ "Digital",
+    prefer_magazine_type == "physical" ~ "Physical",
+    prefer_magazine_type == "not_important" ~ "Not Important"
+  ))
+
+d1 <- df_summary %>%
+  ggplot(aes(x = fct_infreq(prefer_magazine_type), fill = prefer_magazine_type)) +  # Reorder x-axis by frequency
+  geom_bar() +  
+  geom_text(stat = 'count', aes(label = ..count..), vjust = 2, size = 3) +  # Add labels
+  labs(title = "Bar Chart of People Preference of Magazine",
+       x = "Magazine Categories",
+       y = "Count") +  # Set legend title
+  scale_fill_brewer(palette = "Set2") +  # Using a preset color palette
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels for readability
+  guides(fill = "none")  # Remove legend
+
+```
+
+
+
+```{r}
+# Clean and transform the data, then count the frequency of each category
+counts <- data_combined %>%
+  select(Q6B) %>%
+  na.omit() %>%  # Remove rows with NA values in Q6B
+  mutate(Q6B = recode(Q6B,
+                      `1` = "Once a year",
+                      `2` = "Twice a year",
+                      `3` = "Three times a year",
+                      `4` = "Quarterly")) %>%  # Replace numbers with descriptive labels
+  mutate(Q6B = factor(Q6B, levels = c("Once a year", "Twice a year", "Three times a year", "Quarterly", 
+                                      "Every two months", "Monthly"))) %>%  # Set the desired order of levels
+  count(Q6B)  # Count the frequency of each category
+
+
+# Plot a line chart using the counts
+d2 <- ggplot(counts, aes(x = Q6B, y = n, group = 1)) +  # group = 1 ensures all points are connected in one line
+  geom_line() +
+  geom_point() +  # Add points to the line chart
+  geom_text(aes(label = n), vjust = -0.5, size = 3) +  # Add labels above the points
+  labs(title = "Line Chart of Preferred Frequency for Physical Magazine",
+     x = "Frequency",
+     y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+
+library(gridExtra)
+grid.arrange(d1, d2, ncol = 2)
+```
+
+Do those who prefer digital magazines or physical magazines tend to be willing to pay more? Is the type of magazine important to members' fee?
+
+```{r}
+df_summary <- data_combined %>%
+  mutate(Q7 = case_when(
+    Q7 %in% c("life", "life(joint)") ~ "life",  # Combine life categories
+    Q7 %in% c("senior_citizen", "senior_citizen(Joint)") ~ "senior_citizen",  # Combine senior_citizen categories
+    TRUE ~ Q7  # Keep other values unchanged
+  )) %>%
+  select(Q4, Q6A, Q7) %>%
+  rename(price = Q4, magazine_preference = Q6A, membership_type = Q7)
+
+```
+
+- ANOVA (Analysis of Variance) with Categorical Variables
+
+ANOVA is specifically designed to compare means across different groups, so it's naturally suited for categorical variables. For example, in a one-way ANOVA, you might analyze how a categorical variable like magazine_preference (e.g., "digital" vs. "physical") affects a continuous variable like price.
+
+In R, ANOVA automatically treats categorical variables as factors (i.e., groups/categories), so you don’t need to manually convert them. ANOVA tests whether the means of different groups are significantly different.
+
+```{r}
+anova_model <- aov(price ~ magazine_preference * membership_type, data = df_summary)
+
+summary(anova_model)
+
+```
+
+Linear Regression with Categorical Variables
+Linear regression can also handle categorical variables, but these must be converted into dummy variables (or indicator variables). In R, this conversion happens automatically when you include categorical variables in the model.
+
+Dummy variable encoding:
+For a categorical variable with k categories, R creates k−1 dummy variables. These dummy variables take the values of 0 or 1, indicating the presence of a specific category.
+Reference category: One of the categories is treated as the baseline (reference category), and the coefficients for other categories show the effect relative to this reference.
+
+
+
+- Linear Regression with Categorical Variables
+
+Linear regression can also handle categorical variables, but these must be converted into dummy variables (or indicator variables). In R, this conversion happens automatically when you include categorical variables in the model.
+
+Dummy variable encoding:
+For a categorical variable with k categories, R creates k−1 dummy variables. These dummy variables take the values of 0 or 1, indicating the presence of a specific category.
+
+Reference category: One of the categories is treated as the baseline (reference category), and the coefficients for other categories show the effect relative to this reference.
+
+
+```{r}
+lm_model <- lm(price ~ magazine_preference + membership_type, data = df_summary)
+summary(lm_model)
+```
+
+```{r}
+ggplot(df_summary, aes(x = magazine_preference, 
+                       y = price, 
+                       fill = membership_type)) +
+  stat_summary(fun = "mean", geom = "bar", position = "dodge") +
+  labs(title = "Average Price by Magazine Preference and Membership Type", 
+       x = "Magazine Preference", y = "Average Price")
+```
+
+```{r}
+ggplot(df_summary, aes(x = magazine_preference, 
+                       y = price
+                       )) +
+  stat_summary(fun = "mean", geom = "bar", position = position_dodge()) +
+  labs(title = "Average Price by Magazine Preference and Membership Type", 
+       x = "Magazine Preference", 
+       y = "Average Price") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1") 
+```
+
+
+We did not find strong relationship between price and magazine type preference or membership type. 
+
+
+#### Membership type with their most valuable benefit: Correspondence Analysis
+
+```{r}
+library(ca) 
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7),  Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7) %>%
+  select(Category, Q2)
+
+ca_result <- table(df_summary$Q2, df_summary$Category) %>% ca()
+
+
+
+
+plot(ca_result, 
+     main = "Correspondence Analysis of the Most Important Benefit and Membership Category")
+
+
+```
+
+#### Membership type with activities they have done within the last year
+
+
+In the context of the activity correlation analysis using your df_transformed data, the numeric values (0 and 1) represent participation in the activities as follows:
+
+1: Indicates that a member participated in the activity.
+0: Indicates that a member did not participate in the activity.
+
+```{r}
+# Select relevant columns for the analysis
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7),  Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7) %>%
+  select(Category, Q10_1:Q10_8)
+  
+
+# Transform data format
+df_transformed <- df_summary %>%
+  mutate(
+    visit_heritage = ifelse(!is.na(Q10_1), 1, 0),
+    visit_heritage_other_org = ifelse(!is.na(Q10_2), 1, 0),
+    visit_heritage_overseas = ifelse(!is.na(Q10_3), 1, 0),
+    buy_from_shop = ifelse(!is.na(Q10_4), 1, 0),
+    buy_from_cafe = ifelse(!is.na(Q10_5), 1, 0),
+    attend_event = ifelse(!is.na(Q10_6), 1, 0),
+    attend_cultural_event = ifelse(!is.na(Q10_7), 1, 0),
+    watch_video = ifelse(!is.na(Q10_8), 1, 0)
+  ) %>%
+  select(Category, visit_heritage, visit_heritage_other_org, 
+         visit_heritage_overseas, buy_from_shop, buy_from_cafe, attend_event, 
+         attend_cultural_event, watch_video)
+
+activity_participation <- df_transformed %>%
+  summarise(across(-Category, ~mean(.) * 100)) %>%
+  pivot_longer(everything(), names_to = "Activity", values_to = "Participation_Rate")
+
+activity_participation 
+```
+
+```{r}
+
+activity_counts <- df_transformed %>%
+  group_by(Category) %>%
+  summarise(across(c(visit_heritage, visit_heritage_other_org, visit_heritage_overseas,
+                      buy_from_shop, buy_from_cafe, attend_event, attend_cultural_event,
+                      watch_video), sum, na.rm = TRUE))
+
+activity_long <- activity_counts %>%
+  pivot_longer(
+    cols = starts_with("visit_") | starts_with("buy_") | starts_with("attend_") | starts_with("watch_"),  
+    names_to = "Activity",  
+    values_to = "Participation"  
+  )
+
+df_wide <- activity_long %>%
+  pivot_wider(
+    names_from = Category,        
+    values_from = Participation,         
+    values_fill = 0                
+  ) 
+
+
+activity_table <- as.table(as.matrix(df_wide[, -1]))
+
+rownames(activity_table) <- df_wide$Activity
+
+ca_result <- ca(activity_table)
+
+plot(ca_result, 
+     main = "Correspondence Analysis of Membership Types and Activities",
+     )
+```
+
+
+Participation Rates:
+```{r}
+ggplot(activity_participation, aes(x = reorder(Activity, Participation_Rate), 
+                                   y = Participation_Rate, 
+                                   fill = Activity) ) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "Participation Analysis", x = "Activity", y = "Participation Rate (%)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Analyzing Member Activity Level:
+```{r}
+member_participation <- df_transformed %>%
+  group_by(Category) %>%
+  summarise(across(starts_with("visit_") | starts_with("buy_") | starts_with("attend_") | starts_with("watch_"), 
+                   ~ mean(. == 1) * 100, 
+                   .names = "{.col}")) %>%
+  pivot_longer(-Category, names_to = "Activity", values_to = "Participation_Rate")
+
+member_participation %>%
+  mutate(Activity = case_when(
+    Activity == "visit_heritage" ~ "Heritage Visit",
+    Activity == "visit_heritage_other_org" ~ "Other Org Heritage",
+    Activity == "visit_heritage_overseas" ~ "Overseas Heritage",
+    Activity == "buy_from_shop" ~ "Shop Purchase",
+    Activity == "buy_from_cafe" ~ "Cafe Purchase",
+    Activity == "attend_event" ~ "Event Attendance",
+    Activity == "attend_cultural_event" ~ "Cultural Event",
+    Activity == "watch_video" ~ "Video Watching"
+  )) -> member_participation
+  
+ 
+# Visualize Membership Types and Participation Rates
+ggplot(
+  member_participation, aes(x = Activity, 
+                            y = Participation_Rate, 
+                            fill = Category)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  labs(title = "Participation Rate by Membership Type", 
+       x = "Activity", 
+       y = "Participation Rate (%)", 
+       fill = "Membership Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ Category, ncol = 2)  
+```
+
+
+Analyzing Correlation Between Activities: 
+```{r}
+library(corrplot)
+
+# Activity Correlation Analysis
+activity_correlation <- df_transformed %>%
+  select(visit_heritage, visit_heritage_other_org, 
+         visit_heritage_overseas, buy_from_shop, buy_from_cafe, 
+         attend_event, attend_cultural_event, watch_video) %>%
+  cor()  # Calculate the correlation matrix
+
+new_names <- c("Heritage Visit", "Other Org Heritage", 
+               "Overseas Heritage", "Shop Purchase", 
+               "Cafe Purchase", "Event Attendance", 
+               "Cultural Event", "Video Watching")
+
+colnames(activity_correlation) <- new_names
+rownames(activity_correlation) <- new_names
+
+# 2. Visualize Activity Correlation
+corrplot(activity_correlation, method = "color", type = "upper", 
+         order = "hclust", tl.col = "black", 
+         tl.srt = 45, addCoef.col = "black", 
+         number.cex = 0.7)
+```
+
+Correlation Analysis: 
+
+When you calculate the correlation between these binary values, the resulting correlation coefficients will tell you how strongly the participation in one activity is related to the participation in another activity. 
+Here's a brief overview of how to interpret the correlation values:
+
+Correlation Coefficient (r) Interpretation:
+
+* 1.0: Perfect positive correlation (if someone participates in one activity, they will definitely participate in the other).
+
+* 0.5 to 1.0: Strong positive correlation.
+
+* 0.1 to 0.5: Weak positive correlation.
+
+* 0.0: No correlation (participation in one activity does not imply participation in another).
+
+* -0.1 to -0.5: Weak negative correlation.
+
+* -0.5 to -1.0: Strong negative correlation (if someone participates in one activity, they are less likely to participate in the other).
+
+* -1.0: Perfect negative correlation.
+
+
+#### Predict membership type from the activities that they have participated in from last year 
+
+Random forest 
+```{r}
+library(caret)
+library(randomForest)
+
+set.seed(123)
+
+df_model <- df_transformed %>%
+  rename(membership_type = Category) %>%   
+  mutate(membership_type = as.factor(membership_type)) 
+
+trainIndex <- createDataPartition(df_model$membership_type, p = 0.7, list = FALSE)
+train <- df_model[trainIndex, ]
+test <- df_model[-trainIndex, ]
+
+rf_model <- randomForest(membership_type ~ visit_heritage + visit_heritage_other_org + visit_heritage_overseas + buy_from_shop + buy_from_cafe + attend_event + attend_cultural_event + watch_video, data = train, ntree = 100)
+
+rf_pred <- predict(rf_model, newdata = test)
+
+table(Predicted = rf_pred, Actual = test$membership_type)
+
+rf_accuracy <- mean(rf_pred == test$membership_type)
+print(paste("Random Forest Accuracy:", rf_accuracy))
+```
+
+Decision Tree
+```{r}
+library(rpart)
+
+tree_model <- rpart(membership_type ~ visit_heritage + visit_heritage_other_org + visit_heritage_overseas + buy_from_shop + buy_from_cafe + attend_event + attend_cultural_event + watch_video, data = train, method = "class")
+
+
+tree_pred <- predict(tree_model, newdata = test, type = "class")
+
+
+tree_accuracy <- mean(tree_pred == test$membership_type)
+print(paste("Decision Tree Accuracy:", tree_accuracy))
+```
+
+SVM
+```{r}
+library(e1071) 
+
+svm_model <- svm(membership_type ~ visit_heritage + visit_heritage_other_org + visit_heritage_overseas + buy_from_shop + buy_from_cafe + attend_event + attend_cultural_event + watch_video, data = train)
+
+svm_pred <- predict(svm_model, newdata = test)
+
+
+svm_accuracy <- mean(svm_pred == test$membership_type)
+print(paste("SVM Accuracy:", svm_accuracy))
+```
+
+KNN - K-Nearest Neighbors
+```{r}
+library(class)
+
+k <- 5
+
+
+knn_pred <- knn(train = train[, -1], test = test[, -1], cl = train$membership_type, k = k)
+
+knn_accuracy <- mean(knn_pred == test$membership_type)
+print(paste("KNN Accuracy:", knn_accuracy))
+```
+
+
+Gradient Boosting (GBM)
+```{r}
+
+library(gbm)
+
+gbm_model <- gbm(membership_type ~ visit_heritage + visit_heritage_other_org + visit_heritage_overseas + buy_from_shop + buy_from_cafe + attend_event + attend_cultural_event + watch_video, data = train, distribution = "multinomial", n.trees = 100)
+
+
+gbm_pred <- predict(gbm_model, newdata = test, n.trees = 100, type = "response")
+gbm_pred_class <- apply(gbm_pred, 1, which.max)
+
+test_membership_numeric <- as.numeric(test$membership_type)
+gbm_accuracy <- mean(gbm_pred_class == test_membership_numeric)
+print(paste("GBM Accuracy:", gbm_accuracy))
+
+```
+
+Neural Network
+```{r}
+
+library(nnet)
+
+nnet_model <- nnet(membership_type ~ visit_heritage + visit_heritage_other_org + visit_heritage_overseas +
+                   buy_from_shop + buy_from_cafe + attend_event + attend_cultural_event + watch_video,
+                   data = train, size = 5, maxit = 200)
+
+
+nn_pred <- predict(nnet_model, newdata = test, type = "class")
+
+
+nn_accuracy <- mean(nn_pred == test$membership_type)
+print(paste("Neural Network Accuracy:", nn_accuracy))
+
+```
+
+XGBoost
+```{r}
+library(xgboost)
+
+train_matrix <- as.matrix(train[, -1])
+test_matrix <- as.matrix(test[, -1])
+train_label <- as.numeric(train$membership_type) - 1  
+test_label <- as.numeric(test$membership_type) - 1
+
+
+xgb_model <- xgboost(data = train_matrix, label = train_label, nrounds = 100, objective = "multi:softmax", num_class = length(unique(train$membership_type)))
+
+
+xgb_pred <- predict(xgb_model, newdata = test_matrix)
+
+
+xgb_accuracy <- mean(xgb_pred == test_label)
+print(paste("XGBoost Accuracy:", xgb_accuracy))
+
+```
+
+The reason this might be a good choice is that:
+
+(1) Data Issues
+
+Lack of Feature Variation: If your data lacks distinguishing features between different membership types, all models may end up making similar predictions. This indicates that the models are unable to effectively differentiate between various types of members, leading to similar or identical prediction outcomes across all models. The model’s inability to capture meaningful distinctions between the categories can result in low performance despite different algorithms being used.
+
+Class Imbalance: If certain membership types dominate your dataset while other types have very few observations, models may tend to predict the majority class more often. In such cases, the models can achieve a relatively high accuracy simply by predicting the majority class, even though their performance is poor when it comes to correctly identifying the minority classes. This can mask the true effectiveness of the model, giving a misleading impression of success.
+
+(2) Model Oversimplification
+
+Simple Models: If the number of features in your dataset is limited or the models themselves are too simplistic, different models may struggle to learn enough useful information from the data. As a result, the prediction outcomes across models could be very similar. In this scenario, even more complex models may not offer significant improvements because the input data doesn't provide enough variation for them to leverage.
+
+Improper Feature Selection: If the features you are using (e.g., activity participation data) are not effective in distinguishing between membership types, all models, regardless of their complexity, will produce similar predictions. Without relevant and informative features, even advanced models may fail to capture the underlying patterns in the data, leading to comparable performance.
+
+## membership satisfaction on a scale of 0 to 10
+
+```{r}
+library(plotly)
+
+
+
+plot_ly(
+  type = "indicator",
+  mode = "gauge+number",
+  value = mean(data_combined$Q9),
+  title = list(text = "Average Membership Satisfaction"),
+  gauge = list(
+    axis = list(range = list(0, 10)),
+    bar = list(color = "#424627"),  # Lighter blue for the bar
+    steps = list(
+      list(range = c(0, 4), color = "#6D743E"),  # Red-orange for dissatisfied
+      list(range = c(4, 7), color = "#c5d26c"),  # Grey for neutral
+      list(range = c(7, 10), color = "#FCFEEE")  # Light green for satisfied
+    ),
+    threshold = list(
+      line = list(color = "black", width = 4),  # Black threshold line
+      value = mean(data_combined$Q9)  # Threshold at the average satisfaction
+    )
+  )
+)
+
+
+```
+
+## Net Promoter score question 12
+
+```{r}
+nps_data <- data_combined %>%
+  mutate(NPS = case_when(
+    Q12 >= 9 ~ "Promoter",
+    Q12 >= 7 & Q12 <= 8 ~ "Passive",
+    Q12 <= 6 ~ "Detractor"
+  )) %>%
+  summarise(
+    Promoters = sum(NPS == "Promoter") / n() * 100,
+    Passives = sum(NPS == "Passive") / n() * 100,
+    Detractors = sum(NPS == "Detractor") / n() * 100
+  ) %>%
+  mutate(NPS_Score = Promoters - Detractors)
+
+
+```
+
+```{r}
+
+# Create a data frame for visualization
+nps_viz_data <- data.frame(
+  Category = c("Promoters", "Passives", "Detractors"),
+  Percentage = c(nps_data$Promoters, nps_data$Passives, nps_data$Detractors)
+)
+
+
+ggplot(nps_viz_data, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = paste0(round(Percentage, 2), "%")),  # Add percentage sign
+            position = position_stack(vjust = 0.5),  # Adjusts the position of the text
+            color = "white",  # Change the text color to improve visibility
+            size = 5) +  # Adjust the size of the text
+  labs(title = "NPS Breakdown: Promoters, Passives, and Detractors",
+       x = "Category", y = "Percentage") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2")  # Using Set2 color palette
+
+```
+
+
+
+NPS is an essential metric for understanding the health of your membership base and ensuring that your transformation plan is targeted toward enhancing member loyalty, satisfaction, and growth. It provides actionable insights into where to focus your efforts to maximize membership retention and attract new members.
+
+
+
+## Are Members Satisfied with the Current Classification?
+
+```{r}
+# Choose the variables that we want to use
+
+df_summary <- data_combined %>% select(Q5_1, Q5_2)
+
+# Replace NA values with "Other Answers" and "suit" with "Suitable Category"
+df_summary$Q5_1[is.na(df_summary$Q5_1)] <- "Other Answers"
+df_summary$Q5_1[df_summary$Q5_1 == 'suit'] <- "Suitable Category"
+
+# Calculate the counts of each response
+response_counts <- table(df_summary$Q5_1)
+response_percent <- prop.table(response_counts) * 100
+
+# Plot the bar chart with percentages
+ggplot(as.data.frame(response_percent), aes(reorder(x = Var1, -Freq), y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.1f%%", Freq)), vjust = -0.5) +
+  labs(title = "Are Members Satisfied with the Current Classification?",
+       x = "Response",
+       y = "Percentage", 
+    fill = "Response Type") +
+  scale_fill_manual(values = c("Suitable Category" = "#F4A9AB", "Other Answers" = "#7DB2C6")) +
+  theme_minimal()
+```
+
+## Missing benefit 
+
+```{r}
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7),  Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7) %>%
+  select(Category, Q3_1:Q3_6)
+
+
+# Transform data format
+df_transformed <- df_summary %>%
+  mutate(
+    monthly_membership = ifelse(!is.na(Q3_1), 1, 0),
+    membership_donation = ifelse(!is.na(Q3_2), 1, 0),
+    family_content = ifelse(!is.na(Q3_3), 1, 0),
+    member_handbook = ifelse(!is.na(Q3_4), 1, 0),
+    volunteering_opportunities = ifelse(!is.na(Q3_5), 1, 0),
+    local_info_events = ifelse(!is.na(Q3_6), 1, 0)
+  ) %>% select(-c(Q3_1:Q3_6))
+```
+
+
+Frequency Analysis and Visualization
+```{r}
+# Calculate the frequency and percentage of each benefit
+benefit_summary <- df_transformed %>%
+  select(-Category) %>%  # Exclude the Q7 column
+  summarise(
+    monthly_membership = sum(monthly_membership, na.rm = TRUE),
+    membership_donation = sum(membership_donation, na.rm = TRUE),
+    family_content = sum(family_content, na.rm = TRUE),
+    member_handbook = sum(member_handbook, na.rm = TRUE),
+    volunteering_opportunities = sum(volunteering_opportunities, na.rm = TRUE),
+    local_info_events = sum(local_info_events, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = everything(), names_to = "Benefit", values_to = "Count") %>%
+  mutate(Percentage = (Count / sum(Count)) * 100)
+
+benefit_summary <- benefit_summary %>%
+  mutate(Benefit = recode(Benefit,
+                              "monthly_membership" = "Monthly Membership",
+                              "membership_donation" = "Membership Donation",
+                              "family_content" = "Family Content",
+                              "member_handbook" = "Member Handbook",
+                              "volunteering_opportunities" = "Volunteering Opportunities",
+                              "local_info_events" = "Local Info & Events"))
+  
+
+benefit_summary <- benefit_summary %>%
+  mutate(Category = ifelse(rank(-Percentage) <= 2, "Top 2", "Other"))
+
+# Create the ggplot
+ggplot(benefit_summary, aes(x = reorder(Benefit, -Percentage), y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.1f%%", Percentage)), vjust = -0.5) +
+  labs(title = "Importance of Future Potential Benefits to Members",
+       x = "Benefit",
+       y = "Percentage of Members") +
+  scale_fill_manual(values = c("Top 2" = "#c5d26c", "Other" = "grey")) +  # Set color for Top 2 and use a color from Set2 for others
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Cross-tabulation Analysis
+```{r}
+# Calculate the cross-tabulation of benefits by membership type
+cross_tab <- df_transformed %>%
+  group_by(Category) %>%
+  summarise(
+    monthly_membership = sum(monthly_membership, na.rm = TRUE),
+    membership_donation = sum(membership_donation, na.rm = TRUE),
+    family_content = sum(family_content, na.rm = TRUE),
+    member_handbook = sum(member_handbook, na.rm = TRUE),
+    volunteering_opportunities = sum(volunteering_opportunities, na.rm = TRUE),
+    local_info_events = sum(local_info_events, na.rm = TRUE)
+  )
+
+
+  
+
+# Group by Category and calculate proportions
+cross_tab_std <- cross_tab %>%
+  group_by(Category) %>%
+  # Calculate the total sum across the relevant columns for each group
+  mutate(total_sum = rowSums(across(monthly_membership:local_info_events))) %>%
+  # Calculate the proportion for each relevant variable
+  mutate(across(monthly_membership:local_info_events, 
+                 ~ . / total_sum * 100,  # Calculate proportion as a percentage
+                 .names = "{.col}")) %>%
+  select(-total_sum)
+
+```
+
+Heatmap Visualization
+
+```{r}
+# Reshape data for heatmap visualization
+heatmap_data <- cross_tab_std %>%
+  pivot_longer(cols = -Category, names_to = "Benefit", values_to = "Percentage")
+
+# Plot a heatmap
+
+heatmap_data <- heatmap_data %>%
+  mutate(Benefit = recode(Benefit,
+                              "monthly_membership" = "Monthly Membership",
+                              "membership_donation" = "Membership Donation",
+                              "family_content" = "Family Content",
+                              "member_handbook" = "Member Handbook",
+                              "volunteering_opportunities" = "Volunteering Opportunities",
+                              "local_info_events" = "Local Info & Events"))
+
+ggplot(heatmap_data, aes(x = Benefit, y = Category, fill = round(Percentage, 2))) + 
+  geom_tile(color = "white") + 
+  scale_fill_gradient(low = "white", high = "darkblue") +  # White to dark blue color scale
+  labs(title = "Importance of Benefits by Membership Type",
+       x = "Missing Benefit",
+       y = "Membership Type",
+       fill = "Percentage (%)") + 
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+## Sentiment Analysis (Focus group data)
+
+### Session 1 
+
+```{r}
+library(tidyverse)
+library(tidytext)
+
+# Sample structured data based on the document with consistent sizes
+data <- tibble(
+  participant = c("P1", "P2", "P3", "P4", "P5", "P6"),
+  question_1 = c("Primarily views heritage in a physical context...", 
+                 "Values the stories and people connected...", 
+                 "Emphasizes the evolution of heritage understanding...",
+                 "Believes heritage is undefined and subjective...", 
+                 "Cultural events as important aspects of heritage...",
+                 "Describes heritage as a living entity."),
+  question_2 = c("Joined for reciprocal membership benefits...",
+                 "Enjoys reading the quarterly magazine...",
+                 "Sees Heritage New Zealand as advocates...",
+                 "Lacks understanding of membership benefits...",
+                 "Finds membership a financial burden...",
+                 "Wants more transparency from Heritage NZ."),
+  question_3 = c("Top benefit is free admission...",
+                 "Finds international membership benefits appealing...",
+                 "Believes membership is a financial contribution...",
+                 "Interested in more than just buildings...",
+                 "Seeks engagement with local communities...",
+                 "Values educational resources provided.")
+)
+
+# Create a custom sentiment lexicon
+custom_sentiments <- tibble(
+  word = c("good", "bad", "helpful", "poor", "satisfied", 
+           "dissatisfied", "transparency", "educational", "values",
+           "benefits", "financial", "important", "understanding"),
+  sentiment = c("positive", "negative", "positive", "negative", 
+                "positive", "negative", "positive", "positive", 
+                "positive", "negative", "positive", "positive", "positive")
+)
+
+# Unnest the data for text analysis
+data_long <- data %>%
+  pivot_longer(cols = starts_with("question_"),
+               names_to = "question",
+               values_to = "response")
+
+# Perform sentiment analysis using the custom lexicon
+sentiment_analysis <- data_long %>%
+  unnest_tokens(word, response) %>%
+  inner_join(custom_sentiments, by = "word") %>%
+  count(participant, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment_score = positive - negative)
+
+# Print sentiment scores
+print(sentiment_analysis)
+
+# Thematic Analysis
+themes <- data_long %>%
+  group_by(question) %>%
+  summarise(themes = list(unique(response)))
+
+```
+
+```{r}
+# Load necessary library
+library(ggplot2)
+library(tidyr)
+
+# Sample sentiment data
+sentiment_data <- tibble(
+  participant = c("P1", "P2", "P3", "P4", "P5", "P6"),
+  negative = c(1, 1, 0, 1, 0, 0),
+  positive = c(0, 1, 2, 1, 2, 3),
+  sentiment_score = c(-1, 0, 2, 0, 2, 3)
+)
+
+# Convert data to long format for visualization
+sentiment_long <- sentiment_data %>%
+  pivot_longer(cols = c(negative, positive),
+               names_to = "sentiment_type",
+               values_to = "count")
+
+# Plot the sentiment analysis
+ggplot(sentiment_long, aes(x = participant, y = count, fill = sentiment_type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Sentiment Analysis by Participant",
+       x = "Participant",
+       y = "Count",
+       fill = "Sentiment Type") +
+  scale_fill_manual(values = c("negative" = "red", "positive" = "green")) +
+  theme_minimal()
+
+
+```
+
+- Participants P1 and P2 indicate some level of dissatisfaction or ambivalence, which may highlight areas for improvement in the membership experience.
+
+- Positive Feedback: Participants P3, P5, and P6 demonstrate satisfaction, suggesting that certain aspects of the membership are well-received and could be emphasized in communications or marketing efforts.
+
+
+```{r}
+# Sample data with member types
+data_with_types <- tibble(
+  participant = c("P1", "P2", "P3", "P4", "P5", "P6"),
+  member_type = c("Individual", "Family", "Individual", "Senior", "Family", "Individual"),
+  response = c("Primarily views heritage in a physical context...", "Values the stories...",
+               "Emphasizes the evolution of heritage understanding...", "Believes heritage is undefined...",
+               "Cultural events are important...", "Describes heritage as a living entity.")
+)
+
+# Analyze sentiment by member type
+sentiment_by_type <- data_with_types %>%
+  group_by(member_type) %>%
+  summarise(count = n(), .groups = 'drop')
+
+# Visualize the member type distribution
+ggplot(sentiment_by_type, aes(x = member_type, y = count, fill = member_type)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Distribution of Responses by Member Type",
+       x = "Member Type",
+       y = "Count") +
+  theme_minimal()
+
+```
+
+
+### Sentiment Analysis (Focus group data)
+
+What keeps you as members? 
+
+```{r}
+
+
+# Load libraries
+library(dplyr)
+library(tidytext)
+library(stringr)
+library(tidyr)
+library(ggplot2)
+
+# Create a data frame with the interview data
+interview_data <- data.frame(
+  Participant = c(
+    "A", "B", "C", "A", "D", "D", "C", "F", "D", "E", 
+    "C", "F", "D", "E", "B", "G", "H", "I", "J", "K", "L", "M"
+  ),
+  Response = c(
+    "For me and my husband, it's the benefits. But it's also not that we avail much of the benefits at all, but it's the cause. That's what it is. OK, supporting heritage.",
+    "It's the same for me. I want to support what you are doing. Yeah. Yeah.",
+    "One of the nice things about having some of these is that I'm at the age now where I'm starting to think perhaps I shouldn't have to live for another 10 years in my motor home. I should be starting to move into a retirement village. And there's nothing better than to go to a retirement village and say, would you like these to start the conversation? And you give them three or four of these magazines as an introduction to a person you've never met before. Yeah. And then I'm just going to hop back to your previous sort of comment. With technology today, why have a membership card when you can have it on your cell phone? Membership cards must have a big cost for you people to produce. And on your application for membership, you have to say, do you want it on a cell phone, or do you want a physical card? Because most people nowadays do everything on their cell phone.",
+    "What about security?",
+    "From my point of view, I like the idea that I am, as everyone's kind of said, helping to contribute, even in a tiny way, to saving these buildings. It also has to have a somewhat semi-professional interest because I work with heritage buildings. Feeling like I'm contributing is the thing that's going to keep me continuing to be a member.",
+    "I just like visiting all the properties. It'll keep me happy. I'm happy to go back to other ones that I've already been to. I like that you offer opportunities to visit properties that aren't necessarily on the visit list as well. That's nice. I’ve been planning some of my travel around specifically trying to add extra properties in there.",
+    "For me, it's just an important organization for the country.",
+    "It's about supporting the organization, but it is the heritage. Supporting heritage rather than any particular benefits.",
+    "I think it's supporting the organization as well. Fine when I knew it coming back here as a perk.",
+    "I really feel morally obliged because I'm so into heritage, dressing up my kids in 1820s clothes and photographing them when we go to properties. I feel very chill; I feel like I should be involved in voicing the organization in some place.",
+    "I like the feeling of making a contribution to something that I think is really important.",
+    "I'm a history buff, and my mother was originally a member for many years. I've inherited her interest in preservation and advocacy to protect buildings, even in the Auckland region, which means so much to the whole aspect of our society.",
+    "That sense of place with the view of us. I think seeing them is how we feel engaged and feel like this is our place.",
+    "Perhaps it is worth looking at different membership levels to have a bigger financial contribution to more than just producing magazines.",
+    "I'd like to see heritage in New Zealand involved. The magazine has shown me some really good photographs, but there was a place we visited that was desolate. We couldn’t find anything to really look at initially, but on our return, there was a group who remade some of the defensive networks. We had to pay separately to see them, but they provided us a good talk about the place and its history.",
+    "It's no different from the reason why we joined—to support maintaining history for future generations. It's what our priorities are when we're looking at our budget.",
+    "That might create confusion. I like things staying the same because unless I want to concentrate on them, it's easier to just know what the go is and stick to it more or less.",
+    "So then what do younger members want? It's all very well to say to us what do we want to do when we renew, but what about what people in their 20s and 30s would want? Once we're no longer here, who's going to be supporting it unless you're growing the next generation?",
+    "That’s why I think noting all the sites in the magazine or in your email newsletter is important. It gives focus and alerts us to sites we may not have seen. If there’s a project that any one of us wants to go and help with, we have that information regularly. I know some younger members will get into projects if they know about them.",
+    "Over the past months, I've been involved with producing photographs of old abandoned buildings where I live. I’ve seen many historically relevant buildings facing demolition due to neglect, which is disheartening. By having heritage membership, I can advocate for preservation.",
+    "We have a 15,000 membership base. Your magazine only takes articles by commission, but there’s so much relevant information that could engage our members.",
+    "Those stories that we can contribute should go into the monthly newsletters."
+  ),
+  stringsAsFactors = FALSE
+)
+```
+
+
+```{r}
+
+# Tokenize the responses into words and remove stop words
+tidy_data <- interview_data %>%
+  unnest_tokens(word, Response) %>%
+  anti_join(stop_words, by = "word")
+
+# Count word frequency
+word_counts <- tidy_data %>%
+  count(word, sort = TRUE) %>%
+  ungroup()
+
+# Count word frequency
+word_counts <- tidy_data %>%
+  count(word, sort = TRUE) %>%
+  ungroup()
+
+# Display the top 10 most common words
+top_words <- word_counts %>% 
+  top_n(10, n) 
+
+# Print top words
+print(top_words)
+
+ggplot(top_words, aes(x = reorder(word, n), y = n, fill = n >= 5)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_manual(values = c("FALSE" = "grey", "TRUE" = "#c5d26c"), 
+                    labels = c("FALSE" = "Count ≥ 5", "TRUE" = "Count > 5")) +
+  labs(title = "Top 10 Most Common Words in Question: What keeps you as members?",
+       x = "Words",
+       y = "Frequency",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+```
+
+
+
+```{r}
+# 3. Sentiment Analysis
+sentiment_scores <- interview_data %>%
+  unnest_tokens(word, Response) %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(Participant, sentiment)
+
+# 4. Visualizing Sentiment
+ggplot(sentiment_scores, aes(x = sentiment, fill = sentiment)) +
+  geom_bar() +
+  labs(title = "Sentiment Analysis of Member Responses",
+       x = "Sentiment",
+       y = "Count") + theme_bw()
+
+```
+
+## Recommendations
+
+```{r}
+generate_recommendations <- function(issues) {
+  recommendations <- list()
+  
+  if ("Lacks understanding of membership benefits..." %in% issues) {
+    recommendations <- append(recommendations, "Implement a communication campaign to clarify membership benefits.")
+  }
+  
+  if ("Finds membership a financial burden..." %in% issues) {
+    recommendations <- append(recommendations, "Consider offering tiered membership options to alleviate financial concerns.")
+  }
+  
+  if ("Wants more transparency from Heritage NZ." %in% issues) {
+    recommendations <- append(recommendations, "Improve communication regarding organizational decisions and benefits.")
+  }
+  
+  return(recommendations)
+}
+
+identified_issues <- c("Lacks understanding of membership benefits...", "Finds membership a financial burden...")
+recommendations <- generate_recommendations(identified_issues)
+print(recommendations)
+
+```
+## Logistic regression to check churn and no churn
+
+**Why are we doing this ?**
+
+The goal of using logistic regression for churn prediction is to identify which members are at risk of not renewing their membership, so the organization can take proactive measures to retain them. 
+
+```{r}
+# Step 1: Create a Churn Risk Indicator
+# Define churn risk based on low satisfaction (Q9 <= 4) or low NPS (Q12 <= 6)
+data_logistic <- data_combined %>%
+  mutate(Churn_Risk = ifelse(Q9 <= 4 | Q12 <= 6, 1, 0))  # 1 indicates high risk of churn, 0 indicates low risk
+
+# Step 2: Prepare the Data
+# Convert membership type to a factor
+data_logistic$Q7 <- as.factor(data_logistic$Q7)
+
+# Select features for the model
+churn_data <- data_logistic %>%
+  filter(!is.na(Churn_Risk), !is.na(Q9), !is.na(Q12), !is.na(Q7)) %>%
+  select(Churn_Risk, Q9, Q12, Q7)
+
+# Step 3: Build a Logistic Regression Model
+churn_model <- glm(Churn_Risk ~ Q9 + Q12 + Q7, data = churn_data, family = binomial)
+
+# Step 4: Get Model Summary
+summary(churn_model)
+
+# Step 5: Predict Churn Probabilities
+churn_data$Predicted_Probability <- predict(churn_model, churn_data, type = "response")
+
+# Step 6: Identify High-Risk Members
+high_risk_members <- churn_data %>%
+  filter(Predicted_Probability > 0.5)  # Using a threshold of 0.5 for high risk
+
+# Display high-risk members
+head(high_risk_members)
+
+```
+
+The logistic regression results provide insights into the factors that influence the likelihood of churn (i.e., non-renewal). Here's what can be interpreted from the coefficients and predictions:
+
+1. Coefficients Interpretation:
+Intercept (25.9109): Represents the baseline log-odds of churn when all other variables are zero. The high positive value suggests a higher likelihood of churn when satisfaction (Q9) and NPS (Q12) are not considered.
+
+Q9 (Satisfaction Score): The coefficient for Q9 is -1.3306, which is statistically significant (p < 0.001). This negative coefficient indicates that higher satisfaction scores reduce the risk of churn. For each additional point in the satisfaction score, the log-odds of churn decrease by approximately 1.33.
+
+Q12 (NPS Score): The coefficient for Q12 is -2.5214, also statistically significant (p < 0.001). This suggests that higher NPS scores are associated with a lower risk of churn. For each additional point in the NPS score, the log-odds of churn decrease by approximately 2.52.
+
+Membership Type (Q7):
+
+The coefficients for different membership types (e.g., "individual," "life," "senior_citizen") are not statistically significant (p > 0.05). This implies that, in this model, membership type does not significantly impact the likelihood of churn compared to the baseline membership type (family).
+The very high standard errors for some membership types (e.g., "life," "student") suggest that these categories may have few data points, leading to unreliable estimates.
+2. Significance Levels:
+Q9 and Q12: The stars (***) next to the p-values for Q9 and Q12 indicate a very strong statistical significance, confirming that satisfaction and NPS are key predictors of churn.
+Membership Types: None of the membership type coefficients show statistical significance, meaning that, based on this model, there is no strong evidence that any specific membership type has a different churn risk compared to the baseline.
+3. Model Fit:
+Residual Deviance (66.339) and Null Deviance (302.095): The reduction in deviance suggests that the model fits the data better than a model with no predictors (intercept-only model).
+AIC (86.339): The AIC value is used for model comparison. A lower AIC indicates a better fit, but it’s relative to other models.
+4. Predicted Churn Probabilities:
+The provided predictions give specific examples of members' churn probabilities based on the model:
+
+High Churn Risk (Predicted_Probability near 1):
+For example, the member with a satisfaction score of 1 and NPS of 1 has a churn probability of 1 (certainty of churn). This aligns with the interpretation that low satisfaction and NPS significantly increase churn risk.
+Moderate to High Churn Risk:
+A member with a satisfaction score of 7 and NPS of 6 has a churn probability of around 0.81, indicating a high but not certain risk of churn. This suggests that even moderate scores can still indicate a risk, depending on other factors.
+
+
+
+In a nutshell, the output shows which members are at higher risk of not renewing their membership based on satisfaction (Q9), NPS (Q12), and membership type (Q7). The higher the Predicted_Probability (closer to 1), the more likely the member is to churn. Low satisfaction and NPS scores are key indicators driving these high churn probabilities. This analysis helps identify members who may need targeted retention strategies to prevent churn.
+
+
+
+
+**visualize the average satisfaction scores for different membership types. **
+
+
+```{r membership_type_satisfaction, echo=FALSE}
+# Load required packages
+library(dplyr)
+library(plotly)
+
+# Define a threshold for a low number of responses
+low_response_threshold <- 5
+
+# Group data by membership type and calculate average satisfaction
+satisfaction_by_type <- data_logistic  %>%
+  filter(!is.na(Q7), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7)%>%
+  group_by(Category) %>%
+  summarise(Average_Satisfaction = mean(Q9, na.rm = TRUE), 
+            Response_Count = n()) %>%  # Also count the number of responses
+  arrange(desc(Average_Satisfaction))
+
+# Create the bar chart using plotly
+plotly_chart <-
+  plot_ly(
+    satisfaction_by_type,
+    x = ~ reorder(Category, -Average_Satisfaction),
+    y = ~ Average_Satisfaction,
+    type = 'bar',
+    text = ~ paste(
+      "Avg Satisfaction:",
+      round(Average_Satisfaction, 2),
+      "<br>Responses:",
+      Response_Count
+    ),
+    textposition = 'auto',
+    marker = list(
+      color = ~ ifelse(Average_Satisfaction >= 8.43, '#c5d26c', 'grey')
+    ) 
+  ) %>%
+  layout(
+    title = 'Average Satisfaction by Membership Type',
+    xaxis = list(title = 'Membership Type'),
+    yaxis = list(title = 'Average Satisfaction'),
+    shapes = list(
+      list(
+        type = "line",
+        x0 = 0,
+        x1 = 1,
+        xref = "paper",
+        y0 = 8.43,
+        y1 = 8.43,
+        line = list(color = "darkgreen", dash = "dash")
+      )
+    )
+  )
+
+
+# Add a warning annotation if any group has low responses
+low_response_members <- satisfaction_by_type %>%
+  filter(Response_Count < low_response_threshold)
+
+if (nrow(low_response_members) > 0) {
+  warning_text <- paste("Note: Membership types with <", low_response_threshold, "responses may not be reliable.")
+  
+  plotly_chart <- plotly_chart %>%
+    layout(annotations = list(
+      list(x = 0.5, y = 2.05, text = warning_text, 
+           showarrow = FALSE, xref='paper', yref='paper', 
+           font = list(size = 12, color = 'blue'))
+    ))
+}
+
+# Print the plotly chart
+plotly_chart
+
+```
+
+
+```{r}
+
+# Extract the average willingness to pay
+
+willingness_to_pay <- data_combined %>%
+  filter(!is.na(Q7), !is.na(Q4), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  group_by(Q7) %>%
+  summarise(Average_Willingness_to_Pay = mean(Q4, na.rm = TRUE)) %>%
+  rename(Category = Q7)
+
+
+# Create the pricing data
+pricing_info <- data.frame(
+  Category = c("Family", "Individual", "Joint Senior", "Senior", "Student", "Life", "Joint Life"),
+  Price = c(79, 69, 60, 50, 50, 1050, 1399)
+)
+
+
+# Merge the two data frames
+comparison_data <- merge(pricing_info, willingness_to_pay, by = "Category", all = TRUE)
+
+comparison_data <- comparison_data %>%
+  mutate(
+    Average_Willingness_to_Pay = round(Average_Willingness_to_Pay, 2),
+    Difference = abs(Price - Average_Willingness_to_Pay)
+  ) %>%
+  arrange(desc(Difference))
+
+# Create the plot with values displayed on the bars
+plot_ly(comparison_data) %>%
+  add_trace(
+    x = ~reorder(Category, -Difference), 
+    y = ~Price, 
+    type = 'bar', 
+    name = 'Actual Price',
+    marker = list(color = '#DDE1B1'),  # Set color for Actual Price
+    text = ~Price,                     # Display rounded Price values
+    textposition = 'outside'            # Position the text outside the bars
+  ) %>%
+  add_trace(
+    x = ~reorder(Category, -Difference), 
+    y = ~Average_Willingness_to_Pay, 
+    type = 'bar', 
+    name = 'Willingness to Pay',
+    marker = list(color = '#AC3B45'),   # Set color for Willingness to Pay
+    text = ~Average_Willingness_to_Pay, # Display rounded Willingness to Pay values
+    textposition = 'outside'            # Position the text outside the bars
+  ) %>%
+  layout(
+    title = 'Comparison of Actual Pricing and Willingness to Pay',
+    xaxis = list(title = 'Membership Category'),
+    yaxis = list(title = 'Price ($)'),
+    barmode = 'group'
+  )
+
+```
+
+
+12. Where do you get your news and information from? Choose your top three.
+
+```{r}
+# Bubble Chart
+
+news_segmentation <- data_combined %>%
+  filter(!is.na(Q7), !is.na(Q4), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  # Select the columns related to the question
+  select(Q7, Q11_1:Q11_12) %>%
+  pivot_longer(cols = starts_with("Q11"), names_to = "Source", values_to = "Selected") %>%
+  filter(!is.na(Selected)) %>%
+  mutate(Source = recode(Source,
+                         Q11_1 = "Social Media",
+                         Q11_2 = "E-newsletters",
+                         Q11_3 = "Newspapers",
+                         Q11_4 = "Online News Websites or Apps",
+                         Q11_5 = "Magazines",
+                         Q11_6 = "Blogs",
+                         Q11_7 = "Television",
+                         Q11_8 = "On-demand Television",
+                         Q11_9 = "Subscription Streaming Services",
+                         Q11_10 = "Radio",
+                         Q11_11 = "Podcasts",
+                         Q11_12 = "Other")) %>%
+  # Group by membership type and information source
+  group_by(Q7, Source) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  # Get the top three sources for each membership type
+  arrange(Q7, desc(Count)) 
+  
+
+ggplot(news_segmentation, aes(x = Source, y = Q7, size = Count, color = Count)) +
+  geom_point(alpha = 0.7) +
+  scale_size_continuous(range = c(2, 12)) +
+  scale_color_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Information Source Preferences by Membership Type",
+       x = "Information Source", y = "Membership Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+
+```{r}
+ # Clean and transform the data, then count the frequency of each source
+top_three_sources <- news_segmentation %>%
+  group_by(Q7) %>%
+  slice_max(Count, n = 3) %>%
+  ungroup()
+
+# Display the top three sources for each membership type
+top_three_sources
+
+```
+
+
+```{r}
+# Bar chart to visualize the top three sources for each membership category
+ggplot(top_three_sources, aes(x = reorder(Source, -Count), y = Count, fill = Q7)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Q7, scales = "free_y") +
+  labs(title = "Top Three Information Sources by Membership Type",
+       x = "Information Source", y = "Count",
+       fill = "Membership Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+# Data transformation to get the overall top three sources
+overall_top_three_sources <- data_combined %>%
+  # Select relevant columns and transform the data
+  select(Q11_1:Q11_12) %>%
+  pivot_longer(cols = everything(), names_to = "Source", values_to = "Selected") %>%
+  filter(!is.na(Selected)) %>%
+  mutate(Source = recode(Source,
+                         Q11_1 = "Social Media",
+                         Q11_2 = "E-newsletters",
+                         Q11_3 = "Newspapers",
+                         Q11_4 = "Online News Websites or Apps",
+                         Q11_5 = "Magazines",
+                         Q11_6 = "Blogs",
+                         Q11_7 = "Television",
+                         Q11_8 = "On-demand Television",
+                         Q11_9 = "Subscription Streaming Services",
+                         Q11_10 = "Radio",
+                         Q11_11 = "Podcasts",
+                         Q11_12 = "Other")) %>%
+  # Group by information source and count occurrences
+  group_by(Source) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  # Get the top three sources overall
+  arrange(desc(Count)) %>%
+  slice_max(Count, n = 3)
+
+# Display the overall top three sources
+overall_top_three_sources
+
+```
+
+
+```{r}
+# Data transformation to get the frequency for each information source
+frequency_sources <- data_combined %>%
+  # Select relevant columns and transform the data
+  select(Q11_1:Q11_12) %>%
+  pivot_longer(cols = everything(), names_to = "Source", values_to = "Selected") %>%
+  filter(!is.na(Selected)) %>%
+  mutate(Source = recode(Source,
+                         Q11_1 = "Social Media",
+                         Q11_2 = "E-newsletters",
+                         Q11_3 = "Newspapers",
+                         Q11_4 = "Online News Websites or Apps",
+                         Q11_5 = "Magazines",
+                         Q11_6 = "Blogs",
+                         Q11_7 = "Television",
+                         Q11_8 = "On-demand Television",
+                         Q11_9 = "Subscription Streaming Services",
+                         Q11_10 = "Radio",
+                         Q11_11 = "Podcasts",
+                         Q11_12 = "Other")) %>%
+  # Group by information source and count occurrences
+  group_by(Source) %>%
+  summarise(Frequency = n(), .groups = "drop") %>%
+  arrange(desc(Frequency))
+
+# Display the frequency for each information source
+frequency_sources
+
+```
+
+
+```{r membership_benefits_usage, echo=FALSE}
+
+# Combine columns for Q1 (benefits enjoyed)
+benefits_usage <- data_combined %>%
+  select(Q1_1:Q1_8) %>%
+  pivot_longer(cols = everything(), names_to = "Benefit", values_to = "Used") %>%
+  filter(!is.na(Used)) %>%
+  group_by(Benefit) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+# Recode benefits for better readability
+benefits_usage$Benefit <- recode(benefits_usage$Benefit,
+                                 Q1_1 = "Free entry to HNZPT places",
+                                 Q1_2 = "Free entry to international heritage",
+                                 Q1_3 = "Protecting heritage",
+                                 Q1_4 = "Magazine",
+                                 Q1_5 = "Monthly e-newsletter",
+                                 Q1_6 = "Heritage events",
+                                 Q1_7 = "Video information",
+                                 Q1_8 = "Discounts")
+
+benefits_usage <- benefits_usage %>%
+  mutate(Category = ifelse(rank(-Count) <= 4, "Top 4", "Other"))
+
+# Create the ggplot
+ggplot(benefits_usage, aes(x = reorder(Benefit, -Count), y = Count, fill = Category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Count), vjust = -0.5, size = 4) +
+  labs(title = "Most Used Membership Benefits",
+       x = "Benefit", y = "Number of Members") +
+  scale_fill_manual(values = c("Top 4" = "#c5d26c", "Other" = "grey")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+```
+
+
+```{r most_important_benefit, echo=FALSE}
+
+
+# Count the selection of the most important benefit
+important_benefit <- data_combined %>%
+  filter(!is.na(Q2)) %>%
+  count(Q2) %>%
+  arrange(desc(n))
+
+
+# Recode Q2 values for readability
+important_benefit$Q2 <- recode(important_benefit$Q2,
+                               free_entry_NZ = "Free entry to HNZPT places",
+                               free_entry_oversea = "Free entry to international heritage",
+                               protection = "Protecting heritage",
+                               magazine = "Magazine",
+                               newsletter = "Monthly e-newsletter",
+                               events = "Heritage events",
+                               video_info = "Video information",
+                               discounts = "Discounts")
+
+top_benefits <- important_benefit %>% 
+  top_n(4, n) %>% 
+  pull(Q2)
+
+
+ggplot(important_benefit, aes(x = reorder(Q2, -n), y = n, 
+                              fill = factor(ifelse(1:nrow(important_benefit) <= 4, "Top 4", "Other")))) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5, size = 4) +
+  labs(title = "Most Important Membership Benefit",
+       x = "Benefit", y = "Number of Selections") +
+  scale_fill_manual(values = c("Top 4" = "#c5d26c", "Other" = "grey")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+```
+
+
+
+```{r future_services_interest, echo=FALSE}
+
+
+# Combine columns for Q3 (future services interest)
+future_services <- data_combined %>%
+  select(Q3_1:Q3_6) %>%
+  pivot_longer(cols = everything(), names_to = "Service", values_to = "Interested") %>%
+  filter(!is.na(Interested)) %>%
+  group_by(Service) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+# Recode services for readability
+future_services$Service <- recode(future_services$Service,
+                                  Q3_1 = "Monthly membership payments",
+                                  Q3_2 = "Combined membership and donation",
+                                  Q3_3 = "More content for families",
+                                  Q3_4 = "Member handbook",
+                                  Q3_5 = "Volunteering opportunities",
+                                  Q3_6 = "Local information and events")
+
+# Plot the interest in future services
+ggplot(future_services, aes(x = reorder(Service, -Count), y = Count, fill = Service)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Count), vjust = -0.5, size = 4) +
+  labs(title = "Interest in Future Membership Services",
+       x = "Service", y = "Number of Members Interested") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+```
+
+
+```{r magazine_preferences, echo=FALSE}
+library(dplyr)
+library(ggplot2)
+
+# Analysis of magazine format preference (Q6A)
+magazine_format <- data_combined %>%
+  filter(!is.na(Q6A)) %>%
+  count(Q6A) %>%
+  arrange(desc(n))
+
+# Recode Q6A values
+magazine_format$Q6A <- recode(magazine_format$Q6A,
+                              `1` = "Physical",
+                              `2` = "Digital")
+
+# Analysis of magazine frequency preference (Q6B)
+magazine_frequency <- data_combined %>%
+  filter(!is.na(Q6B)) %>%
+  count(Q6B) %>%
+  arrange(desc(n))
+
+# Recode Q6B values
+magazine_frequency$Q6B <- recode(magazine_frequency$Q6B,
+                                 `1` = "Once",
+                                 `2` = "Twice",
+                                 `3` = "Three times",
+                                 `4` = "Quarterly")
+
+# Plotting format preferences
+format_plot <- ggplot(magazine_format, aes(x = reorder(Q6A,n), y = n, fill = Q6A)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = n), vjust = -0.5, size = 4) +
+  labs(title = "Magazine Format Preferences",
+       x = "Format", y = "Number of Members") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Plotting frequency preferences
+frequency_plot <- ggplot(magazine_frequency, aes(x = Q6B, y = n, group = 1)) +
+  geom_line(color = "blue") +
+  geom_point(size = 3, color = "blue") +
+  geom_text(aes(label = n), vjust = -0.5, size = 3) +
+  labs(title = "Magazine Frequency Preferences",
+       x = "Frequency(A year)", y = "Number of Members") +
+  theme_minimal()
+
+# Arrange both plots together
+library(gridExtra)
+grid.arrange(format_plot, frequency_plot, ncol = 2)
+```
+
+```{r information_sources_analysis, echo=FALSE}
+library(dplyr)
+library(ggplot2)
+
+# Analysis of information sources (Q12)
+info_sources <- data_combined %>%
+  select(Q11_1:Q11_12) %>%
+  pivot_longer(cols = everything(), names_to = "Source", values_to = "Selected") %>%
+  filter(!is.na(Selected)) %>%
+  group_by(Source) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+# Recode the sources
+info_sources$Source <- recode(info_sources$Source,
+                              Q11_1 = "Social Media",
+                              Q11_2 = "E-newsletters",
+                              Q11_3 = "Newspapers",
+                              Q11_4 = "Online News Websites or Apps",
+                              Q11_5 = "Magazines",
+                              Q11_6 = "Blogs",
+                              Q11_7 = "Television",
+                              Q11_8 = "On Demand TV",
+                              Q11_9 = "Streaming Services",
+                              Q11_10 = "Radio",
+                              Q11_11 = "Podcasts",
+                              Q11_12 = "Other")
+
+# Create a new column to categorize the sources
+info_sources <- info_sources %>%
+  mutate(Category = ifelse(rank(-Count) <= 4, "Top 4", "Other"))
+
+# Create the ggplot
+ggplot(info_sources, aes(x = reorder(Source, -Count), y = Count, fill = Category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Count), vjust = -0.5, size = 4) +
+  labs(title = "Top Sources for Information Among Members",
+       x = "Source", y = "Number of Members") +
+  scale_fill_manual(values = c("Top 4" = "#c5d26c", "Other" = "grey")) +  # Set colors
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+```
+
+
+# Open ended question  8 
+
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(wordcloud2)
+library(syuzhet)
+library(plotly)
+library(stopwords)
+
+
+# Generate a word cloud from open-ended responses
+responses <- tolower(data_combined$Q8)
+
+word_list <- unlist(strsplit(responses, "\\s+"))
+
+filtered_words <- word_list[!word_list %in% stopwords("en")]
+
+
+word_freq <- data.frame(table(filtered_words))
+colnames(word_freq) <- c("word", "freq")
+
+
+library(wordcloud2)
+wordcloud2(word_freq, size = 1, color = 'random-light', backgroundColor = "#343a40", shape = "circle")
+
+```
+
+
+```{r}
+# Create sentiment distribution plot with custom colors
+sentiment_scores <- get_nrc_sentiment(data_combined$Q8)
+sentiment_summary <- colSums(sentiment_scores)
+sentiment_df <- data.frame(
+  Sentiment = names(sentiment_summary),
+  Score = sentiment_summary
+)
+
+# Define custom colors for each sentiment
+color_palette <-
+  c(
+    "anger" = "#e74c3c",
+    "anticipation" = "#f39c12",
+    "disgust" = "#8e44ad",
+    "fear" = "#c0392b",
+    "joy" = "#f1c40f",
+    "negative" = "#95a5a6",
+    "positive" = "#2ecc71",
+    "sadness" = "#3498db",
+    "surprise" = "#9b59b6",
+    "trust" = "#1abc9c"
+  )
+
+# Plot sentiment distribution with custom colors
+plot_ly(sentiment_df, x = ~reorder(Sentiment, -Score), y = ~Score, type = 'bar',
+        marker = list(color = ~color_palette[Sentiment]),
+        text = ~paste("Sentiment:", Sentiment, "<br>Score:", Score),
+        hoverinfo = "text") %>%
+  layout(title = "Sentiment Score Distribution",
+         xaxis = list(title = "Sentiment"),
+         yaxis = list(title = "Score"))
+
+```
+
+
+```{r}
+# Summary of key insights
+num_responses <- nrow(data_combined)
+positive_words <- sum(get_nrc_sentiment(data_combined$Q8)$positive)
+negative_words <- sum(get_nrc_sentiment(data_combined$Q8)$negative)
+
+cat("**Key Insights:**")
+cat(paste("- Total responses:", num_responses))
+cat(paste("- Positive sentiment words:", positive_words))
+cat(paste("- Negative sentiment words:", negative_words))
+
+
+```
+
+
+
+

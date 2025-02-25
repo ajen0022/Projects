@@ -1,0 +1,13 @@
+name: HNZPT_membership_project
+title: HNZPT_membership_project
+username: ajen0022
+account: ajen0022
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13291678
+bundleId: 9342011
+url: https://ajen0022.shinyapps.io/HNZPT_membership_project/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: analysis/analysis.Rmd|analysis/session_1_keypoint.txt|LICENSE|Presentation.pptx|README.md|report

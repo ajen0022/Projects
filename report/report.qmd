@@ -1,0 +1,2101 @@
+---
+title: "Heritage New Zealand Pouhere Taonga Membership Transformation Project"
+author:
+- name: Amrita Jena
+  degrees: Master of Business Analytics
+  email: ajen0022@student.monash.edu
+- name: Chih-Hui (Chloe) Wang
+  degrees: Master of Business Analytics
+  email: cwan0169@student.monash.edu 
+phone: (03) 9905 2478
+email: BusEco-Econometrics@monash.edu
+organisation: Monash University
+bibliography: references.bib
+format: 
+    report-pdf:
+      toc: true
+---
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.width = 6,             # Set default figure width (in inches)
+  fig.height = 4,            # Set default figure height (in inches)
+  fig.align = "center",      # Center-align all figures
+  out.width = "80%" )
+```
+
+
+```{r}
+#Load Libraries
+library(tidyverse)
+library(readxl)
+library(stringr)
+library(wordcloud)
+library(visdat)
+library(forcats)
+library(RColorBrewer)
+library(ggrepel)
+library(ca)
+library(knitr)
+library(stopwords)
+library(tidytext)
+library(corrplot)
+library(gridExtra)
+```
+
+
+# Abstract
+
+In today’s data-driven landscape, leveraging analytics is key for organisations seeking to make informed decisions that align with community needs and drive sustainable growth. Heritage New Zealand Pouhere Taonga (see @HNZPT), dedicated to preserving New Zealand’s cultural heritage, relies on its membership program to engage and connect with the public. However, in recent years, membership growth has plateaued, highlighting a need for strategic improvements to enhance program appeal and member engagement. To address this, our internship project used both quantitative survey data and qualitative insights to analyse current membership dynamics and identify opportunities for improvement.
+
+Our analysis of this survey data provided actionable insights into member satisfaction, preferences, and areas where the program could be refined to better align with evolving expectations. As an additional resource, we developed an interactive Shiny dashboard to help Heritage New Zealand visualise and explore these findings more effectively. While not updated in real-time, the dashboard allows the organisation to review survey responses and focus group feedback in a structured, accessible format, offering a comprehensive view of membership trends and preferences.
+
+Our findings highlight opportunities for enhancing specific membership benefits and engagement strategies. This data-driven framework and accompanying dashboard equip Heritage New Zealand Pouhere Taonga with the insights and tools needed to strategically revitalise its membership offerings, supporting both member retention and growth while fostering a stronger, more engaged community.
+
+The GitHub repository containing the analysis for this project is accessible [here](https://github.com/cwan0169/HNZPT_membership_project). Access is restricted due to data confidentiality, so only authorized users can view the repository.
+
+# Introduction
+
+## Background
+
+Heritage New Zealand Pouhere Taonga is an organisation committed to preserving cultural heritage both within New Zealand and in select international locations. Through educational programmes, community participation, and historic site restoration, the organisation hopes to promote a greater understanding of New Zealand's past and cultural identity. The membership program at Heritage New Zealand is a critical element of its mission, bringing together individuals who are passionate about heritage conservation and providing essential financial support for ongoing initiatives.
+
+However, like many cultural institutions, Heritage New Zealand has recently encountered challenges in sustaining membership growth. This trend is common among cultural and heritage institutions as they navigate evolving member expectations and demographic changes. Understanding what drives member satisfaction and identifying potential improvements in the membership offering are essential steps to revitalising the program and ensuring it remains attractive to both current and prospective members.
+
+To address these challenges, we analysed Heritage New Zealand Pouhere Taonga's membership program through a data-driven approach. By examining member feedback, including survey responses and focus group discussions, we aimed to gain insights that could inform strategic adjustments to enhance engagement, satisfaction, and growth within the membership base.
+
+## Goals and Objectives
+
+The main objective of this analysis was to provide Heritage New Zealand Pouhere Taonga with actionable insights to enhance its membership program, aligning it more closely with member expectations and needs. To achieve this, the project focused on five key areas:
+
+**1. Membership Type:** Analyse the existing membership types to determine if they effectively meet the needs of diverse demographics and member preferences.
+
+**2. Membership Benefit and Activity:** Assess the benefits and activities offered by Heritage New Zealand using correlation and correspondence analysis (CA). Identify the most valued offerings and potential enhancements to improve member satisfaction. 
+
+**3. Membership Satisfaction Analysis:** Use the Net Promoter Score (NPS) and other feedback to gauge overall member satisfaction, highlighting areas that may require improvement.
+
+**4. Information Source Analysis:** Evaluate the channels through which members receive information about Heritage New Zealand, determining the effectiveness of these sources and identifying potential improvements for communication.
+
+**5. Member Retention:** Examine factors influencing member retention, including motivations for renewal and strategies to enhance long-term engagement, supported by word clouds and text analysis.
+
+## Significance and Contributions
+
+This project is significant for several reasons. First, it offers Heritage New Zealand Pouhere Taonga a data-driven framework for making informed decisions about its membership program, which is essential for fostering a more engaged and supportive community. By providing insights into member satisfaction, preferences, and engagement levels, the analysis highlights opportunities to better align the membership offerings with the evolving needs of members.
+
+The contributions of this project are threefold:
+
+**1. Enhanced Understanding of Membership Dynamics:** The analysis identifies key drivers of member satisfaction, engagement, and retention, offering Heritage New Zealand a foundation for tailoring its program to meet members' needs more effectively.
+
+**2. Interactive Visualisation Tool:** An interactive [Shiny dashboard]("https://ajen0022.shinyapps.io/HNZPT_membership_project/") was developed to support ongoing data exploration. This tool enables Heritage New Zealand to visualise survey results, making it easier to track trends and monitor member feedback. The dashboard’s accessible format facilitates continuous data-driven decision-making, which is essential for strategic planning.
+
+**3. Practical Recommendations for Program Refinement:** The insights derived from this analysis provide practical recommendations to improve membership categories, enhance benefits, refine activity offerings, and adjust pricing if necessary. These recommendations are based on both quantitative and qualitative insights, ensuring that they are grounded in a holistic understanding of member needs.
+
+In summary, this project equips Heritage New Zealand Pouhere Taonga with actionable insights, a visual analytics tool, and targeted recommendations, all of which contribute to a strengthened membership program capable of fostering long-term engagement and growth.
+
+# Methodology
+
+## Data Overview
+
+For this analysis, we used two primary data sources: survey data collected from members and qualitative feedback obtained from focus group discussions. These complementary datasets provided both quantitative and qualitative insights, enabling a comprehensive understanding of member satisfaction, preferences, and areas for improvement in the membership program.
+
+### Survey Data:
+
+**1. Description:** The survey consisted of 12 questions aimed at capturing insights into members’ experiences, satisfaction levels, and preferences. Most questions were categorical, enabling a systematic quantification of factors such as satisfaction with specific benefits, engagement in activities, perceived value of the membership, and overall satisfaction.
+
+**2. Response Rate and Sample Representation:** We received 435 responses out of 9,000 emails sent, resulting in a response rate of approximately 4.8%. To assess the representativeness of this sample, we calculated a 95% confidence interval with a 5% margin of error to ensure statistical reliability. 
+
+To determine if our sample meets the 95% confidence level with a 5% margin of error, we need to check if the sample size is sufficient for statistical representativeness.
+Generally, for a 95% confidence level and a 5% margin of error, the required sample size can be calculated using the formula:
+
+If the population size is 9000, we can use the finite population correction formula to adjust the required sample size. First, calculate the sample size $n$ assuming an infinite population:
+
+$$n = \frac{Z^2 \cdot p \cdot (1 - p)}{E^2}$$
+
+where:
+
+- $Z = 1.96$ (the z-score for a 95\% confidence level),
+
+- $p = 0.5$ (assuming maximum variability),
+
+- $E = 0.05$ (the margin of error).
+
+Substituting the values: $n = \frac{(1.96)^2 \cdot 0.5 \cdot (1 - 0.5)}{(0.05)^2} \approx 384$
+
+Next, we apply the finite population correction formula:
+
+$$n_{\text{adjusted}} = \frac{n}{1 + \frac{n - 1}{N}}$$
+
+
+where:
+
+- $n = 384$,
+
+- $N = 9000$.
+
+Substituting the values: $n_{\text{adjusted}} = \frac{384}{1 + \frac{384 - 1}{9000}} \approx 370$
+
+Therefore, with a population size of 9000, the adjusted required sample size is 370. Since your actual sample size is 435, which exceeds 370, it meets the criteria for a 95\% confidence level with a 5\% margin of error.
+
+
+**3. Purpose:** This dataset provided structured, quantitative data essential for evaluating key aspects of the membership program. It supported objectives related to understanding member satisfaction, assessing the perceived value of benefits, evaluating activity participation, and gathering perceptions on membership pricing. The survey results formed the foundation for identifying both strengths and areas for improvement within the program.
+
+**4. Key variables in the survey included:**
+
+- **Membership Type:** Categorised different types of memberships to understand demographic distributions.
+
+- **Membership Benefits:** Identified the benefits offered and members' satisfaction with each.
+
+- **Satisfaction and Recommendation Index:**  Measured members' satisfaction with specific benefits provided by the organisation and their likelihood to recommend the organisation.
+
+- **Participation in Activities:** Captured member engagement in events and activities organised by Heritage New Zealand.
+
+- **Perceived Value of Membership:** Assessed how members perceive the value of the membership in relation to the benefits they receive.
+
+**5. Method of Analysis:** 
+
+To extract meaningful insights from the survey data, we used a combination of analytical and visualisation techniques:
+
+- **Exploratory Data Analysis (EDA):** Conducted to summarize the main characteristics of the data, including distribution patterns, satisfaction levels, and engagement metrics. EDA provided a foundational understanding before applying more targeted analyses.
+
+- **Word Cloud:** Created to highlight the most frequently mentioned words and themes in open-ended survey responses, giving a quick visual overview of prominent topics among members.
+
+- **Correspondence Analysis:** Employed to examine relationships between categorical variables, revealing patterns and associations among membership types, benefits, and activities.
+
+- **Visualisation:** Various visualisations, such as bar charts, pie charts, and histograms, were created to depict the distribution of responses, satisfaction levels, and other key insights, allowing for an accessible interpretation of the survey results.
+
+### Focus Group Data
+
+**1. Description:** We received three video and audio files from focus group sessions conducted by Heritage New Zealand Pouhere Taonga. These sessions involved interview-style conversations between members and representatives of the organisation, focusing on various aspects of the membership program and the overall member experience. A total of 13 participants took part in these sessions, and the transcribed data amounted to approximately 15,000 words, providing an in-depth qualitative dataset for analysis.
+
+**2. Purpose:** The focus group data provided rich, qualitative insights into member perceptions, satisfaction, and suggestions for improvement. Unlike the structured responses in the survey, these open-ended discussions allowed members to freely express their thoughts, offering a more nuanced understanding of their experiences and expectations.
+
+**3. Topics Covered:** During the interviews, members shared their views on topics such as the value and relevance of current membership benefits, areas where they felt the program could improve, the activities and events they found most engaging, and their perceptions of membership pricing. This data helped to contextualize the survey results, offering deeper insight into the specific needs and preferences of members.
+
+**Integrating Survey and Focus Group Data for Strategic Enhancement**
+
+In this analysis report, we focused primarily on survey data, supplemented with selected insights from focus group data, to provide a comprehensive view of member experiences. The decision to emphasise survey data is due to its structured, quantitative nature, which offers a systematic basis for measuring key aspects such as satisfaction, engagement, and needs. Additionally, survey data encompasses a broader sample of members, ensuring the analysis is both representative and generalisable.
+
+## Data Cleaning and Preparation
+
+**1. Focus Group Data: Transcription and Processing**
+
+To analyse qualitative insights, we used the three audio files from focus group discussions. We used **Notta transcription software** (See @Notta2024) to convert these audio files into text, enabling us to systematically analyse the feedback. After transcribing the audio files, we performed a qualitative analysis of the text, identifying recurring themes, patterns, and key feedback points. 
+
+**2. Survey Data: Initial Data Cleaning**
+
+The survey data, captured in an Excel file, contained 12 questions primarily focused on member experiences, satisfaction levels, and preferences. Our data cleaning process for this dataset involved several key steps:
+
+**Step 1: Reading and Structuring Data** 
+
+We imported the data into R and removed any empty rows and columns to ensure a clean dataset structure.
+
+```{r data , echo = FALSE  , message = FALSE , warning=FALSE ,include = FALSE}
+
+# Read data from Excel
+data <- read_xlsx("../data/2024_membership_data.xlsx", sheet = 1)
+
+# Remove empty column and row
+data <- data[-3, ]  # Remove the third row if it's empty
+data <- data[, -4]  # Remove the fourth column if it's empty
+
+# Rename all the variable names 
+names(data) <- c("ID", "Start_Date", "End_Date", "Q1_1", "Q1_2", "Q1_3", "Q1_4", "Q1_5", "Q1_6", 
+                  "Q1_7", "Q1_8", "Q2", "Q3_1", "Q3_2", "Q3_3", "Q3_4", "Q3_5", "Q3_6", "Q4", 
+                  "Q5_1", "Q5_2", "Q6A", "Q6A_2", "Q6B_1", "Q6B_2", "Q6B_3", "Q6B_4", 
+                  "Q7", "Q8", "Q9", "Q10_1", "Q10_2", "Q10_3", "Q10_4", "Q10_5", "Q10_6", 
+                  "Q10_7", "Q10_8", "Q11_1", "Q11_2", "Q11_3", "Q11_4", "Q11_5", "Q11_6", 
+                  "Q11_7", "Q11_8", "Q11_9", "Q11_10", "Q11_11", "Q11_12", "Q12", "Q13")
+
+# Remove the first two rows (if necessary)
+data <- data[-c(1:2), ]
+
+
+data_combined <- data
+```
+
+
+
+```{r var_con, echo = FALSE  , message = FALSE , warning=FALSE ,include = FALSE}
+# Combine Q6B columns into a single column named Q6B
+data_combined <- data %>%
+  mutate(Q6B = coalesce(Q6B_1, Q6B_2, Q6B_3, Q6B_4)) %>%
+  select(ID, Start_Date, End_Date, everything(), Q6B) %>%
+  select(-starts_with("Q6B_")) %>%
+  select(ID, Start_Date, End_Date, Q1_1:Q1_8, Q2, Q3_1:Q3_6, Q4, Q5_1:Q5_2, Q6A, Q6B, Q7:Q13)
+
+```
+
+
+**Step 2: Renaming Variables**
+
+To improve readability and consistency, we renamed the variable names to more meaningful labels, reflecting the question or response options. For example, we standardised names like "free_entry_NZ" for free entry to heritage sites in New Zealand, "newsletter" for members club monthly e-newsletter, and "protection" for heritage protection benefits.
+
+```{r var_rename , echo = FALSE  , message = FALSE , warning=FALSE ,include = FALSE}
+
+# Rename Q1 and Q2 options to proper variable name
+
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Free entry to places and sites cared for by Heritage New Zealand Pouhere Taonga",
+        "free_entry_NZ"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Free entry to international heritage places in the United Kingdom, Australia, Italy etc.", 
+        "free_entry_oversea"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Knowing your membership helps to protect heritage", 
+        "protection"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Heritage New Zealand magazine", 
+        "magazine"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Members Club monthly e-newsletter", 
+        "newsletter"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Heritage events and get-togethers with other members", 
+        "events"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Information about heritage places and sites via video", 
+        "video_info"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Discounts on retail products, heritage services and accommodation", 
+        "discounts"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Free entry to Heritage New Zealand Pouhere Taonga places and sites",
+        "free_entry_NZ")))
+
+
+# Rename Q3 option to proper variable name
+
+data_combined <- data_combined %>%
+   mutate(across(everything(), ~ str_replace_all(.x, 
+        "Monthly membership payments", 
+        "monthly_membership"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Combined monthly/annual membership and donation", 
+        "membership_donation"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "More content for families", 
+        "family_content"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Member handbook with property information, maps, and related details", 
+        "member_handbook"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Volunteering opportunities", 
+        "volunteering_opportunities"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "More local/regional information, events and activities", 
+        "local_info_events")))
+
+
+# Rename Q5 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "The existing categories suit me.", 
+        "suit"))) 
+
+# Rename Q6 (A) option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "I would prefer a digital magazine, at a lesser cost to me and the environment.", 
+        "digital"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "I would pay more to keep receiving physical magazines.", 
+        "physical"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "The magazine is not an important benefit to me.", 
+        "not_important"))) 
+
+# Rename Q6 (B) option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "One edition per year", 
+        "1"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Two editions per year \\(every 6 months\\)", 
+        "2"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Three editions per year \\(every 4 months\\)", 
+        "3"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Four editions per year \\(every 3 months\\)", 
+        "4")))
+
+
+# Rename Q7 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Joint Senior Citizen", 
+        "senior_citizen(Joint)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Senior Citizen", 
+        "senior_citizen"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "I'm not sure", 
+        "not_sure"))) %>%
+   mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Student \\(full-time\\)", 
+        "student"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Joint Life", 
+        "life(joint)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Life", 
+        "life"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Individual", 
+        "individual"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Family", 
+        "family")))
+ 
+
+  
+
+# Rename Q9 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "0 Very dissatisfied", 
+        "0"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "10 Very satisfied", 
+        "10"))) %>%
+  mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "5 Neither satisfied or dissatisfied", 
+        "5"))) 
+
+# Rename Q10 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Visited a heritage place managed by Heritage New Zealand Pouhere Taonga", 
+        "visit_heritage"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Visited a heritage place managed by another organisation in New Zealand", 
+        "visit_heritage(other_org)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Visited a heritage place or attraction overseas", 
+        "visit_heritage(overseas)"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Bought something from an Heritage New Zealand Pouhere Taonga shop/online store", 
+        "buy_from_shop"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Bought something from an Heritage New Zealand Pouhere Taonga cafÃ©", 
+        "buy_from_cafe"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Attended an event with Heritage New Zealand Pouhere Taonga", 
+        "attend_event"))) %>%
+ mutate(across(everything(), ~ str_replace_all(str_trim(.x), 
+        "Attended a cultural event \\(opera, ballet, kapa haka, etc\\.\\)", 
+        "attend_cultural_event")))%>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Watched a Heritage New Zealand Pouhere Taonga video", 
+        "watch_video")))
+
+
+# Rename Q11 option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Social media", 
+        "social_media"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Online news websites or apps", 
+        "website/app"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "On demand television", 
+        "on_demand_tv"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Subscription streaming services", 
+        "streaming"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Newspapers", 
+        "newspapers"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Magazines", 
+        "magazines"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Television", 
+        "television"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Podcasts", 
+        "podcasts"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "Radio", 
+        "radio")))%>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "e-newsletters", 
+        "e_newsletters"))) 
+
+
+
+# Rename Q13 option option to proper variable name
+data_combined <- data_combined %>%
+  mutate(across(everything(), ~ str_replace_all(.x, 
+        "I acknowledge and agree to the above.", 
+        "agree"))) 
+```
+
+
+**Step 3: Response Standardisation**
+
+We standardised specific response options to consistent labels. This renaming process helped ensure that each benefit, membership type, or activity was clearly identifiable across the dataset. For example, categorical responses for benefits like "Free entry to places and sites cared for by Heritage New Zealand Pouhere Taonga" were renamed to "free_entry_NZ" for easy reference.
+
+**Step 4: Data Type Conversion**
+
+To facilitate analysis, we converted certain columns to appropriate data types. For example:
+
+- **ID:** Converted to numeric for unique identification.
+
+- **Dates:** "Start_Date" and "End_Date" columns were converted to date-time formats.
+
+- **Numeric Responses:** Columns such as NPS scores and specific categorical values were converted to numeric types, allowing us to perform calculations and analyses without compatibility issues.
+
+```{r data_type, echo = FALSE  , message = FALSE , warning=FALSE ,include = FALSE}
+
+# Convert "ID" to numeric, "Start_Date" and "End_Date" to Date, and other columns to numeric
+# Convert Start_Date and End_Date to POSIXct
+data_combined <- data_combined %>%
+  mutate(
+    Start_Date = as.POSIXct(trimws(Start_Date), format = "%m/%d/%Y %I:%M:%S %p"),
+    End_Date = as.POSIXct(trimws(End_Date), format = "%m/%d/%Y %I:%M:%S %p"),
+    ID = as.numeric(ID),
+    Q4 = as.numeric(Q4),
+    Q6B = as.integer(Q6B),
+    Q9 = as.numeric(Q9),
+    Q12 = as.numeric(Q12),
+  )
+
+
+# Check the structure again to confirm the changes
+str(data_combined)
+
+# Preview the first few rows
+head(data_combined)
+
+
+```
+
+**Step 5: Data Quality Checks**
+
+To ensure robustness and integrity, we conducted preliminary data quality checks:
+
+- **Missing and Infinite Values:** We checked for any missing (NA), Not a Number (NaN), and infinite (Inf) values across relevant columns. No missing or infinite values were found, indicating a clean dataset suitable for analysis.
+
+- **Duplicate Entries:** We checked for duplicate IDs and exact duplicate rows to ensure each entry was unique. No duplicates were identified, confirming the data’s integrity.
+
+
+```{r duplicates , echo = FALSE  , message = FALSE , warning=FALSE , include = FALSE}
+# Check for NA, NaN, and Inf values in the column
+sum(is.na(data_combined$column_name))  # Number of NA values
+sum(is.nan(data_combined$column_name)) # Number of NaN values
+sum(is.infinite(data_combined$column_name)) # Number of Inf values
+
+# Find duplicate IDs
+duplicate_ids <- data_combined[duplicated(data_combined$ID), ]
+duplicate_ids
+
+# Find and display duplicate rows
+duplicates <- data_combined[duplicated(data_combined), ]
+duplicates
+
+# Count the number of duplicate rows
+sum(duplicated(data_combined))
+
+# Replace missing values with the median of the column
+clean_data <- data_combined$column_name
+clean_data[is.na(clean_data)] <- median(clean_data, na.rm = TRUE)
+
+```
+
+**Step 6: Create Data Dictionary**
+
+We created a data dictionary to clearly define each variable, its type, range, and meaning, making the dataset easier to understand and use for analysis.
+
+## Exploratory Data Analysis (EDA)
+
+The Exploratory Data Analysis (EDA) was conducted to gain initial insights into the survey data and to identify any data quality issues or trends in member responses. This process was crucial for understanding the dataset's structure, visualising response patterns, and preparing for more in-depth analysis.
+
+The EDA was organised around three main sections corresponding to survey themes:
+
+**1. Membership Benefits and Preferences:** This section explored which benefits members use and value most, as well as preferences for potential new offerings.
+
+```{r,echo = FALSE  , message = FALSE , warning=FALSE}
+#| label: fig-Q1-Q2-response-frequency
+#| fig-cap: "Frequency of Responses for Q1 and Q2: Most Valued Membership Benefits"
+
+# Q1 and Q2
+data_long <- data_combined %>%
+  select(Q1_1:Q2) %>%
+  pivot_longer(cols = Q1_1:Q2, names_to = "Question", values_to = "Response")
+
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(title = "Frequency of Responses for Q1 and Q2",
+       x = "Questions",
+       y = "Count of Responses") +
+  theme_minimal()
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#| label: fig-Q3-response-frequency
+#| fig-cap: "Frequency of Responses for Q3: Preferences for Potential New Offerings"
+
+# Q3 
+data_long <- data_combined %>%
+  select(Q3_1:Q3_6) %>%
+  pivot_longer(cols = Q3_1:Q3_6, names_to = "Question", values_to = "Response")
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(
+    title = "Frequency of Responses for Q3",
+    x = "Questions",
+    y = "Count of Responses"
+  ) +
+  theme_minimal()
+```
+
+
+**2. Membership Pricing and Categories:** Analysis here focused on members’ reactions to current and proposed price points, and interest in different membership categories.
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#| label: fig-Q4-price-range-density
+#| fig-cap: "Density Plot of Price Range for Q4: Distribution of Membership Pricing Preferences"
+
+# Density Plot for Price Range (Q4)
+
+data_combined %>% 
+  ggplot(aes(x = Q4)) +
+  geom_density() +
+  labs(
+    title = "Density Plot of Price Range for Q4",
+    x = "Price Range (Q4)",
+    y = "Density"
+  ) +
+  theme_bw()
+```
+
+**3. Satisfaction and Engagement:** This section investigated overall member satisfaction, participation in heritage activities, and likelihood of recommending membership.
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#| label: fig-Q10-response-frequency
+#| fig-cap: "Frequency of Responses for Q10: Activities Engaged by Members Over the Last Year"
+
+data_long <- data_combined %>%
+  select(Q10_1:Q10_8) %>%
+  pivot_longer(cols = Q10_1:Q10_8, names_to = "Question", values_to = "Response")
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(
+    title = "Frequency of Responses for Q10",
+    x = "Question",
+    y = "Count of Responses"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis text
+  )
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#| label: fig-Q11-response-frequency
+#| fig-cap: "Frequency of Responses for Q11: Preferred Sources of News and Information"
+
+data_long <- data_combined %>%
+  select(Q11_1:Q11_12) %>%
+  pivot_longer(cols = Q11_1:Q11_11, names_to = "Question", values_to = "Response")
+
+ggplot(data_long, aes(x = Question, fill = Response)) +
+  geom_bar() +
+  labs(
+    title = "Frequency of Responses for Q11",
+    x = "Questions",
+    y = "Count of Responses"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis text
+  )
+```
+
+
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#| label: fig-Q12-recommendation-likelihood
+#| fig-cap: "Frequency of Responses for Q12: Likelihood of Recommending Membership"
+
+# Plotting Frequency of Responses for Question 12
+# Q12: Likelihood of recommending membership on a scale from 0 to 10
+
+data_combined %>%
+  select(Q12) %>%
+  ggplot(aes(x = Q12)) +
+  geom_bar() + 
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) + 
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) +  
+  theme_minimal() +
+  labs(
+    title = "Frequency of Responses for Q12",
+    x = "Likelihood of Recommending Membership (0-10 Scale)",
+    y = "Count of Responses"
+  )
+```
+
+The Exploratory Data Analysis (EDA) provided valuable insights into member preferences, engagement, and satisfaction with Heritage New Zealand's offerings. @fig-Q1-Q2-response-frequency highlights that members highly value benefits such as free entry to heritage sites, heritage protection, and the Heritage New Zealand magazine, underscoring their appreciation for tangible and informational benefits. When asked about potential new offerings, @fig-Q3-response-frequency reveals that members are interested in options like regional events, monthly payment plans, and volunteering opportunities, indicating a desire for more flexible and locally engaging membership features.
+
+The analysis of membership pricing preferences, shown in @fig-Q4-price-range-density, suggests that while most members find the current pricing acceptable, there is some interest in more affordable options, especially among younger members and families. Member engagement in various activities over the last year, depicted in @fig-Q10-response-frequency, shows high participation in heritage visits and events, demonstrating an active and involved membership base.
+
+Preferred sources of information, as shown in @fig-Q11-response-frequency, include e-newsletters, social media, and magazines, providing effective channels for future communication. Lastly,
+@fig-Q12-recommendation-likelihood indicates a strong likelihood of members recommending the program, reflecting overall satisfaction within the membership base.
+
+These findings collectively highlight key areas where Heritage New Zealand can enhance its offerings, refine engagement strategies, and ensure sustained member satisfaction.
+
+**Acknowledgments**
+This analysis was conducted using several R packages, including tidyverse(@R-tidyverse), readxl(@R-readxl), stringr(@R-stringr), wordcloud(@R-wordcloud), visdat(@R-visdat), forcats(@R-forcats), RColorBrewer(@R-RColorBrewer), ggrepel (@R-ggrepel), ca (@R-ca), knitr(@R-knitr), stopwords(@R-stopwords), tidytext(@R-tidytext), corrplot (@R-corrplot), and gridExtra (@R-gridExtra). We gratefully acknowledge the developers of these packages for making this research possible.
+
+
+# Analysis and Results	
+
+Building on the exploratory insights, we proceeded with a structured analysis using various methods to uncover deeper insights.
+
+To gain a foundational understanding of the current membership base, we first analysed the distribution of membership types. This analysis allowed us to see which categories of membership are most popular among Heritage New Zealand members and helped identify potential areas for targeted improvements or new membership offerings.
+
+## Membership Type
+
+### Understanding the Membership Type Composition 
+
+```{r}
+#| label: fig-membership-type
+#| fig-cap: Distribution of Membership Types Among Survey Respondents
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  group_by(Q7) %>%
+  summarise(Count = n()) %>%
+  mutate(Proportion = Count / sum(Count) * 100) %>%
+  rename(Category = Q7)
+
+df_summary <- df_summary %>%
+  arrange(desc(Count)) %>%
+  mutate(Category = factor(Category, levels = Category)) 
+
+
+
+ggplot(df_summary, aes(x = "", y = Proportion, fill = Category)) + 
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  geom_text(aes(y = Proportion, label = paste0(round(Proportion, 1), "%")), 
+            color = "black", position = position_stack(vjust = 0.5)) +  
+  labs(title = "Pie Chart of Membership Types", fill = "Membership Type") +
+  scale_fill_brewer(palette = "Set2") + 
+  theme_void() +
+  theme(plot.title = element_text(hjust = 0.5, size = 14, face = "bold"))
+```
+
+```{r}
+#| label: tbl-table1
+#| tbl-cap: "The Percentage Composition of Different Membership Types" 
+
+# Create the data frame
+membership_data <- data.frame(
+  Type = c("Joint Senior", "Senior", "Family", "Individual", "Life", "Joint Life", "Student"),
+  Proportion = c("49.1%", "20.6%", "18.0%", "9.3%", "2.1%", "0.7%", "0.2%")
+)
+
+# Display the table
+kable(membership_data, align = "c", col.names = c("Type", "Proportion"), 
+      caption = "Proportion of Membership Types")
+
+```
+
+
+As shown in @fig-membership-type and @tbl-table1, **Joint Senior memberships** make up the **largest proportion**, accounting for **49.1%** of the total membership base. This indicates that senior members, particularly those opting for joint memberships, form a substantial segment, highlighting the appeal of Heritage New Zealand’s offerings among this demographic.
+
+The next largest categories are **Senior (20.6%)** and **Individual (18%)** memberships. These types also represent significant portions of the membership, suggesting that individual engagement remains strong and that senior members are particularly engaged in the program.
+
+**Family memberships** account for **9.3%** of the total, indicating some level of interest among families. However, this smaller share may suggest an opportunity to further develop or promote family-oriented benefits and events to increase engagement within this segment.
+
+Smaller categories such as **Life, Joint Life, and Student memberships** represent only a minor fraction of the total membership base. The relatively low numbers in these categories could imply limited awareness or appeal of these membership options, potentially indicating an area where targeted marketing or adjusted benefits might drive further growth.
+
+This breakdown of membership types provides a valuable starting point for understanding who is currently engaged with the organisation and helps guide recommendations on tailoring offerings to meet the specific needs of each segment.
+
+## Pricing Analysis for Membership fee 
+
+### Pricing Analysis: Willingness to Pay
+
+With a clear picture of the membership distribution, we proceeded to analyse members' willingness to pay across different price points. Understanding members' willingness to pay helps us assess whether current pricing aligns with the expectations and budget of various member segments, providing essential context for developing an effective pricing strategy.
+
+To understand members' willingness to pay for different membership tiers, we analysed survey data indicating the price points that members are most comfortable with. @fig-willingness-pay shows both the counts of members willing to pay specific prices and the cumulative percentage of members at each price level, providing insights into the overall distribution of price sensitivity.
+
+
+```{r}
+#| label: fig-willingness-pay
+#| fig-cap: "Distribution of Respondents’ Willingness to Pay with Cumulative Percentage"
+
+# Assuming data_combined is already available
+# Prepare the data
+df_summary <- data_combined %>%
+  count(Q4) %>%
+  arrange(Q4) %>%
+  mutate(Cumulative_Count = cumsum(n),  # Cumulative count
+         Cumulative_Percentage = Cumulative_Count / sum(n) * 100)  # Cumulative percentage
+
+ggplot(df_summary, aes(x = Q4)) +
+  geom_bar(aes(y = n), stat = "identity", fill = "#DDE1B1") +
+  geom_line(aes(y = Cumulative_Percentage, group = 1), color = "#900C3F", size = 1) +
+  scale_y_continuous(
+    name = "Number of Respondents",
+    limits = c(0, 121),  # Adjust to match your actual data range
+    sec.axis = sec_axis(~ . / 1, name = "Cumulative Percentage (%)")
+  ) +
+  labs(title = "Willingness to Pay (Count)", x = "Price ($)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+The most **popular price** points appear to be around **\$70, \$80, and \$100,** with the highest counts at these levels. Specifically, \$70 and \$80 had the greatest number of respondents willing to pay, with 121 members at \$70 and 89 members at \$80.
+
+These peaks suggest that members view these price points as reasonable or within an acceptable range, making them critical for setting a baseline or standard membership fee.
+
+**Cumulative Willingness:** The cumulative line in red (@fig-willingness-pay) indicates that by the time we reach \$80, approximately 67.8% of members are willing to pay this amount or less. At \$100, the cumulative willingness reaches 91.5%, suggesting that nearly all members are willing to pay up to this amount, although fewer are interested in higher amounts.
+
+**Price Sensitivity Beyond $100:** The willingness to pay drops significantly above \$100, as seen by the lower counts at higher price points. This indicates a general threshold around \$100, beyond which fewer members are willing to consider.
+
+
+**Insights for Pricing Strategy** 
+
+**1. Optimal Pricing Range:** Based on the distribution, an optimal pricing range seems to lie between \$70 and \$100. This range accommodates a large percentage of members, balancing affordability with organisational revenue goals.
+
+**2. Potential Premium Tier:** The willingness of some members to pay \$100 or slightly more suggests an opportunity to introduce a premium tier with added benefits, specifically targeted at members who see higher value in exclusive features or experiences.
+
+**3. Flexibility Around \$70 and \$80 Tiers:** Since \$70 and \$80 emerged as the most popular price points, offering flexible options around these tiers, such as an introductory rate or multi-member family discounts, could further enhance membership accessibility and satisfaction.
+
+### Comparison of Actual Pricing and Willingness to Pay
+
+With insights into members’ willingness to pay, we now turn to a comparison of actual prices with these price preferences across membership categories. This comparison allows us to see if the current pricing structure aligns with what members are willing to contribute, or if adjustments are needed to better meet member expectations.
+
+@fig-actualvspresent compares the current (actual) prices of different membership categories at Heritage New Zealand with the average willingness to pay reported by members. The chart provides a clear contrast between the existing price levels (in light yellow bars) and the amount members are generally willing to pay (in red bars) for each membership category.
+
+```{r}
+#| label: fig-actualvspresent
+#| fig-cap: "Bar Chart of the Comparison between Actual Pricing and Willingness to Pay"
+
+# Extract the average willingness to pay
+willingness_to_pay <- data_combined %>%
+  filter(!is.na(Q7), !is.na(Q4), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  group_by(Q7) %>%
+  summarise(Average_Willingness_to_Pay = mean(Q4, na.rm = TRUE)) %>%
+  rename(Category = Q7)
+
+# Create the pricing data
+pricing_info <- data.frame(
+  Category = c("Family", "Individual", "Joint Senior", "Senior", "Student", "Life", "Joint Life"),
+  Price = c(79, 69, 60, 50, 50, 1050, 1399)
+)
+
+# Merge the two data frames
+comparison_data <- merge(pricing_info, willingness_to_pay, by = "Category", all = TRUE)
+
+# Add a Difference column and arrange by Difference
+comparison_data <- comparison_data %>%
+  mutate(
+    Average_Willingness_to_Pay = round(Average_Willingness_to_Pay, 2),
+    Difference = abs(Price - Average_Willingness_to_Pay)
+  ) %>%
+  arrange(desc(Difference))
+
+# Convert data to long format for ggplot2
+comparison_long <- comparison_data %>%
+  pivot_longer(cols = c(Price, Average_Willingness_to_Pay), 
+               names_to = "Type", values_to = "Amount")
+
+# Create the ggplot chart
+ggplot(comparison_long, aes(x = reorder(Category, -Difference), y = Amount, fill = Type)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), color = "black") +
+  scale_fill_manual(values = c("Price" = "#DDE1B1", "Average_Willingness_to_Pay" = "#AC3B45"), 
+                    labels = c("Willingness to Pay", "Actual Price")) +
+  labs(
+    title = "Comparison of Actual Pricing and Willingness to Pay",
+    x = "Membership Category",
+    y = "Price ($)",
+    fill = "Legend"
+  ) +
+  geom_text(aes(label = round(Amount, 2)), 
+            position = position_dodge(width = 0.8), 
+            vjust = -0.3, size = 3) +
+  theme_minimal()+
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis text
+  )
+
+```
+
+**Joint Life and Life memberships**
+
+The Joint Life and Life memberships, priced at \$1399 and \$1050, appear higher than members’ indicated willingness to pay. This gap arises because the survey asked about a \$69 to \$100 NZD range, likely leading members to consider an annual cost rather than a lifetime fee.
+
+**Student membership**
+
+The Student membership has an actual price of \$50, with the sole member expressing a willingness to pay up to $100. This suggests a high perceived value for this membership category; however, with only one respondent, this data may carry a bias, so any pricing adjustments should be approached cautiously.
+
+**Senior and Joint Senior Memberships**
+
+For Senior and Joint Senior memberships, the actual prices (\$50 for Senior and \$60 for Joint Senior) are relatively close to members' willingness to pay, with average willing prices of \$80.35 and \$79.54, respectively.
+
+**Individual and Family Memberships**
+
+Individual and Family memberships have actual prices that are close to members' willingness to pay. The Individual membership is priced at \$69, with an average willingness to pay around \$81.28, while the Family membership is priced at \$79, with a willingness to pay of \$81.09. These prices appear to align well with members' expectations, suggesting that they are perceived as fair and do not require significant adjustments.
+
+**Insights for Pricing Strategy**
+
+**Incremental Price Increase for Student and Senior Memberships:** The willingness to pay for Student and Senior memberships is higher than the actual price, suggesting potential for a modest price increase. If additional benefits or exclusive features are added, this increase could align with members' perceived value. However, for the Student membership, this insight may involve bias as it is based on a single response; further data collection would be beneficial to confirm this finding.
+
+**Maintaining Accessibility for Popular Tiers:** For Individual and Family memberships, the close alignment between actual price and willingness to pay indicates that these tiers are well-balanced in terms of pricing. Maintaining this alignment will help ensure continued accessibility and satisfaction for these categories.
+
+
+## Membership Benefit and Activities
+
+### Membership Benefits
+
+In this section, we delve into understanding which membership benefits the members enjoy and value the most. Each member was given the opportunity to select up to three benefits from our current offerings and to identify the single benefit they consider most important. This approach allows us to answer two key questions: **"Which benefits do you enjoy or use the most? (Choose up to three)"** and **"Which benefit do you consider the most important?"**
+
+To illustrate these insights, we created two bar charts: @fig-membership-benefits-usage and @fig-most-important-benefit, each serving a specific purpose. Bar charts are ideal for this analysis because they allow us to easily compare the frequency and priority of each benefit, visually emphasising which options are most popular among members. By organising the data in a clear, comparative format, we can quickly identify which benefits resonate most widely.
+
+In both charts, we have highlighted the top four benefits to focus attention on the most valued offerings. This approach helps us better understand member priorities and provides actionable insights for enhancing and tailoring our benefits to align with members' preferences.
+
+
+@fig-membership-benefits-usage shows the **top three benefits** that members selected from our offerings, providing a broader view of the benefits that members frequently use or enjoy. By allowing members to choose multiple options, we can see which benefits have widespread appeal across the membership base, revealing the benefits that are most commonly appreciated by a large portion of members.
+
+@fig-most-important-benefit focuses on the **single most favorite benefit**, as identified by each member. This provides a more targeted view of the benefit each member values the most, giving us insight into which specific offering is perceived as the most valuable when members have to prioritise. This chart helps us identify the benefit that stands out above all others in the eyes of members.
+
+Analysing this data gives us a clearer understanding of members' preferences and helps us identify which benefits hold the greatest value for them. The findings provide essential guidance for optimising our benefits design and enhancing member satisfaction.
+
+```{r}
+#| label: fig-membership-benefits-usage
+#| fig-cap: For the plot showing the top 3 benefits chosen by members
+
+# Combine columns for Q1 (benefits enjoyed)
+benefits_usage <- data_combined %>%
+  select(Q1_1:Q1_8) %>%
+  pivot_longer(cols = everything(), names_to = "Benefit", values_to = "Used") %>%
+  filter(!is.na(Used)) %>%
+  group_by(Benefit) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+# Recode benefits for better readability
+benefits_usage$Benefit <- recode(benefits_usage$Benefit,
+                                 Q1_1 = "Free entry to HNZPT places",
+                                 Q1_2 = "Free entry to international heritage",
+                                 Q1_3 = "Protecting heritage",
+                                 Q1_4 = "Magazine",
+                                 Q1_5 = "Monthly e-newsletter",
+                                 Q1_6 = "Heritage events",
+                                 Q1_7 = "Video information",
+                                 Q1_8 = "Discounts")
+
+benefits_usage <- benefits_usage %>%
+  mutate(Category = ifelse(rank(-Count) <= 4, "Top 4", "Other"))
+
+# Create the ggplot
+ggplot(benefits_usage, aes(x = reorder(Benefit, -Count), y = Count, fill = Category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Count), vjust = 0.5, size = 4) +
+  labs(title = "Most Used Membership Benefits",
+       x = "Benefit", y = "Number of Members") +
+  scale_fill_manual(values = c("Top 4" = "#c5d26c", "Other" = "grey")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+```
+
+
+```{r}
+#| label: fig-most-important-benefit
+#| fig-cap: The plot showing the single most favorite benefit
+
+# Count the selection of the most important benefit and calculate percentage
+important_benefit <- data_combined %>%
+  filter(!is.na(Q2)) %>%
+  count(Q2) %>%
+  mutate(Percentage = n / sum(n) * 100) %>%
+  arrange(desc(Percentage))
+
+# Re-code Q2 values for readability
+important_benefit$Q2 <- recode(important_benefit$Q2,
+                               free_entry_NZ = "Free entry to HNZPT places",
+                               free_entry_oversea = "Free entry to international heritage",
+                               protection = "Protecting heritage",
+                               magazine = "Magazine",
+                               newsletter = "Monthly e-newsletter",
+                               events = "Heritage events",
+                               video_info = "Video information",
+                               discounts = "Discounts")
+
+# Define top benefits
+top_benefits <- important_benefit %>% 
+  top_n(4, Percentage) %>% 
+  pull(Q2)
+
+# Plot with percentages
+ggplot(important_benefit, aes(x = reorder(Q2, -Percentage), y = Percentage, 
+                              fill = factor(ifelse(1:nrow(important_benefit) <= 4, "Top 4", "Other")))) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = paste0(round(Percentage, 1), "%")), vjust = 0.5, size = 4) +
+  labs(title = "Membership Benefits Members Value the Most",
+       x = "Benefit", y = "Percentage of Selections") +
+  scale_fill_manual(values = c("Top 4" = "#c5d26c", "Other" = "grey")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+```
+
+The following analysis combines insights from both charts, providing a holistic view of member preferences by comparing general usage with prioritised importance. By examining these data together, we can better understand which benefits hold widespread appeal and which are seen as most essential.
+
+**Key Observations Across Both Charts**:
+   - **Protecting Heritage** consistently ranks high in both charts, confirming it as a key value for members.
+   
+   - **Free Entry** benefits (local and international) are also strongly valued, both as commonly chosen benefits and as top individual selections. This suggests a strong interest in heritage access.
+   
+   - **Magazine** Many members consider the magazine to be an important part of the organisation, as it not only provides valuable information but also strengthens their sense of connection with the organisation.
+
+This combined approach offers a clearer, unified narrative, allowing us to see not only what members generally value but also what they consider most essential. These findings will guide future benefit design to better align with member priorities and enhance overall satisfaction.
+
+### Correspondence Analysis (CA): Membership Type and Benefit {#sec-ca-interpret}
+
+In our analysis, we aim to understand the relationship between membership types and the benefits they consider most important. While a cross table provides a basic view of these associations, it does not allow for a deeper, visual interpretation of the relationships between categories. To address this, we introduce Correspondence Analysis (CA), a statistical technique designed to explore associations within categorical data and present them in a visually interpretable way. CA is particularly effective with two-way contingency tables, where it can reveal patterns of association between rows and columns, such as membership types and benefit preferences.
+
+**Interpreting the CA Plot** 
+
+The CA plot displays both membership types and benefits as points, allowing us to visually interpret the relationships between these categories:
+
+- **Proximity**: Points that are close together indicate categories that are associated. For instance, membership types and benefits that appear near each other suggest that members with a specific membership type are more likely to value those particular benefits.
+
+- **Axes**: Each dimension (usually represented as two axes) captures underlying structures in the data. Here, **Dimension 1** and **Dimension 2** highlight variations in member preferences. The position of benefits and membership types along these axes can help identify patterns within the data.
+
+- **Quadrants**: The location of points across different quadrants can sometimes reveal distinct segments among members based on their preferences or behaviors. For example, points clustered in one quadrant might represent members who prioritise heritage access, while points in another quadrant could indicate members with a preference for informational resources like newsletters and magazines.
+
+
+
+```{r ,fig.width=7, fig.height=5, fig.align="center", out.width="90%"}
+#| label: fig-ca-benefits
+#| fig-cap: Correspondence Analysis of the Relationship Between Membership Types and Their Most Important Benefit
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7),  Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7) %>%
+  select(Category, Q2)
+
+# Cross-tab and ca
+ca_result <- table(df_summary$Q2, df_summary$Category) %>% ca()
+
+# Biplot
+plot(ca_result, 
+     main = "Correspondence Analysis of the Most Important Benefit and Membership Category")
+```
+
+
+**Analysis of the CA Plot Results**
+
+From @fig-ca-benefits, several insights can be drawn:
+
+1. **Protecting Heritage** appears close to **Senior** and **Joint Senior** membership types, indicating that these members may prioritise heritage protection as a key benefit. This association suggests that older or long-standing members value the organisation’s preservation efforts.
+
+2. **Free Entry** benefits (both to local and international heritage sites) are positioned near **Family** and **Joint Senior** membership types, suggesting that members in these categories are inclined toward benefits that provide access to heritage sites. This may indicate a preference for tangible, experience-based benefits among these groups.
+
+3. **Magazines** appear closer to **Senior** and **Joint Senior** membership types. This implies that these members may value informational resources and regular updates provided through the magazine.
+
+4. Less popular benefits, such as **Discounts** and **newsletter**, are further from most membership types, indicating limited appeal across the categories. 
+
+This CA approach allows us to go beyond raw counts and observe subtle relationships within our data, providing actionable insights that support targeted strategies for enhancing member satisfaction and benefit alignment. By identifying which membership types prioritise certain benefits, we can tailor our offerings to better meet the specific needs of different member groups, thereby improving overall engagement and value perception.
+
+### Activities: Member Participation in the Past Year
+
+To gain a deeper understanding of member engagement, we analysed the activities that different membership types participated in within the last year. To standardise the data, we converted the number of activity participations into percentages, allowing for easier comparisons across membership types.
+
+This analysis allows us to identify which activities resonate most strongly with each membership type, helping to pinpoint where engagement efforts are most effective and where there may be opportunities to enhance participation. By examining these patterns, we can better align activity offerings with the preferences of each membership category, ultimately strengthening member engagement and satisfaction.
+
+```{r ,fig.width=7, fig.height=5, fig.align="center", out.width="90%"}
+#| label: fig-activity-participation
+#| fig-cap: Participation Rate by Membership Type Across Various Activities in the Past Year
+
+# Select relevant columns for the analysis
+df_summary <- data_combined %>%
+  filter(!is.na(Q7),  Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7) %>%
+  select(Category, Q10_1:Q10_8)
+
+# Transform data format
+df_transformed <- df_summary %>%
+  mutate(
+    visit_heritage = ifelse(!is.na(Q10_1), 1, 0),
+    visit_heritage_other_org = ifelse(!is.na(Q10_2), 1, 0),
+    visit_heritage_overseas = ifelse(!is.na(Q10_3), 1, 0),
+    buy_from_shop = ifelse(!is.na(Q10_4), 1, 0),
+    buy_from_cafe = ifelse(!is.na(Q10_5), 1, 0),
+    attend_event = ifelse(!is.na(Q10_6), 1, 0),
+    attend_cultural_event = ifelse(!is.na(Q10_7), 1, 0),
+    watch_video = ifelse(!is.na(Q10_8), 1, 0)
+  ) %>%
+  select(Category, visit_heritage, visit_heritage_other_org, 
+         visit_heritage_overseas, buy_from_shop, buy_from_cafe, attend_event, 
+         attend_cultural_event, watch_video)
+
+member_participation <- df_transformed %>%
+  group_by(Category) %>%
+  summarise(across(starts_with("visit_") | starts_with("buy_") | starts_with("attend_") | starts_with("watch_"), 
+                   ~ mean(. == 1) * 100, 
+                   .names = "{.col}")) %>%
+  pivot_longer(-Category, names_to = "Activity", values_to = "Participation_Rate")
+
+member_participation %>%
+  mutate(Activity = case_when(
+    Activity == "visit_heritage" ~ "Heritage Visit",
+    Activity == "visit_heritage_other_org" ~ "Other Org Heritage",
+    Activity == "visit_heritage_overseas" ~ "Overseas Heritage",
+    Activity == "buy_from_shop" ~ "Shop Purchase",
+    Activity == "buy_from_cafe" ~ "Cafe Purchase",
+    Activity == "attend_event" ~ "Event Attendance",
+    Activity == "attend_cultural_event" ~ "Cultural Event",
+    Activity == "watch_video" ~ "Video Watching"
+  )) -> member_participation
+  
+ 
+# Visualise Membership Types and Participation Rates
+ggplot(
+  member_participation, aes(x = Activity, 
+                            y = Participation_Rate, 
+                            fill = Category)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  labs(title = "Participation Rate by Membership Type", 
+       x = "Activity", 
+       y = "Participation Rate (%)", 
+       fill = "Membership Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  facet_wrap(~ Category, ncol = 2)  
+```
+
+
+**Analysis of Participation Rate by Membership Type**
+
+This @fig-activity-participation illustrates the participation rates in various activities across different membership types over the past year, providing insights into how engaged each type of member is in specific activities. By examining participation rates segmented by membership category, we can identify trends in member engagement and preferences, which can inform our strategy for enhancing activity offerings.
+
+1. **Family Members** prefer **Heritage Visit** and **Oversea Heritage**, highlighting a family-oriented interest in cultural experiences.
+
+2. **Individual Members** show strong participation in all kind of **Heritage Visit**.
+
+3. **Life Members** show high engagement in **Video Watching** and **Heritage Visit**, demonstrating their interest in accessible and heritage-focused content. 
+
+4. **Senior Members**, on the other hand, actively participate in **Heritage Visit**, **Cultural Events**, and **Oversea Heritage**, reflecting their strong alignment with a broader range of heritage-focused activities.
+
+Note: Due to limited sample sizes, results for **Joint Life** and **Student** members may not fully represent their participation patterns.
+
+**Key Insights**  
+
+1. **Heritage Activities Lead Engagement**: Heritage-related activities are the main drivers of engagement across all membership types.  
+
+2. **Cafe Purchase** and **Shop Purchase** are not particularly popular among members across all membership types.
+
+### Correspondence Analysis (CA): Membership Type and Activities 
+
+To understand the relationship between membership types and the activities they participated in over the past year, we applied Correspondence Analysis (CA). 
+
+As previously discussed in the @sec-ca-interpret, CA plots provide valuable insights through the proximity of points, the meaning of axes, and the placement within quadrants. In @fig-ca-activities-participation, points representing membership types and activities are displayed in relation to each other, with closer points indicating stronger associations. For example, membership types positioned near certain activities suggest that members in those categories are more likely to participate in those specific activities.
+
+```{r , fig.width=7, fig.height=5, fig.align="center", out.width="90%"}
+#| label: fig-ca-activities-participation
+#| fig-cap: Correspondence Analysis of the Relationship Between Membership Types and Activity Participation
+
+
+activity_counts <- df_transformed %>%
+  group_by(Category) %>%
+  summarise(across(c(visit_heritage, visit_heritage_other_org, visit_heritage_overseas,
+                      buy_from_shop, buy_from_cafe, attend_event, attend_cultural_event,
+                      watch_video), sum, na.rm = TRUE))
+
+activity_long <- activity_counts %>%
+  pivot_longer(
+    cols = starts_with("visit_") | starts_with("buy_") | starts_with("attend_") | starts_with("watch_"),  
+    names_to = "Activity",  
+    values_to = "Participation"  
+  )
+
+df_wide <- activity_long %>%
+  pivot_wider(
+    names_from = Category,        
+    values_from = Participation,         
+    values_fill = 0                
+  ) 
+
+
+activity_table <- as.table(as.matrix(df_wide[, -1]))
+
+rownames(activity_table) <- df_wide$Activity
+
+ca_result <- ca(activity_table)
+
+plot(ca_result, 
+     main = "Correspondence Analysis of Membership Types and Activities",
+     )
+```
+
+**Analysis of the CA Plot Results**
+
+From @fig-ca-activities-participation, we observe several key associations:
+
+1. **Joint Life Membership** is isolated on the left side, indicating limited association with most activities. This could be due to the small sample size or specific preferences that differ from other groups.
+
+2. **Family Members** show an association with **Shop Purchases** and **Cafe Purchases**, suggesting a preference for activities that are easily accessible and potentially family-friendly.
+
+3. **Individual Members** are positioned near **Other organisation Heritage Visits** and **Overseas Heritage Visits**, indicating that they are more likely to participate in culturally enriching experiences. This may suggest a preference for exploring heritage sites beyond the local area.
+
+4. **Senior** are located closer to **Heritage Visits** and **Video Watching**, implying that these members may prefer educational and heritage-centered activities, aligning with the organisation's heritage mission.
+
+This CA approach complements our previous analyses by offering a deeper, more nuanced view of member behavior. It allows us to see which activities resonate with each membership type, guiding decisions for future activity offerings and engagement strategies. By aligning activities with the preferences of each group, we can enhance overall member satisfaction and engagement.
+
+### Correlation Between Activities
+
+After exploring which membership benefits are most valued and examining members' engagement in various activities over the last year, we further analysed the relationships between these activities to uncover any patterns of concurrent engagement. This Correlation Between Activities analysis offers insights into whether certain activities tend to occur together or if members engage in them independently.
+
+```{r}
+# Select relevant columns for the analysis
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7),  Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7) %>%
+  select(Category, Q10_1:Q10_8)
+  
+
+# Transform data format
+df_transformed <- df_summary %>%
+  mutate(
+    visit_heritage = ifelse(!is.na(Q10_1), 1, 0),
+    visit_heritage_other_org = ifelse(!is.na(Q10_2), 1, 0),
+    visit_heritage_overseas = ifelse(!is.na(Q10_3), 1, 0),
+    buy_from_shop = ifelse(!is.na(Q10_4), 1, 0),
+    buy_from_cafe = ifelse(!is.na(Q10_5), 1, 0),
+    attend_event = ifelse(!is.na(Q10_6), 1, 0),
+    attend_cultural_event = ifelse(!is.na(Q10_7), 1, 0),
+    watch_video = ifelse(!is.na(Q10_8), 1, 0)
+  ) %>%
+  select(Category, visit_heritage, visit_heritage_other_org, 
+         visit_heritage_overseas, buy_from_shop, buy_from_cafe, attend_event, 
+         attend_cultural_event, watch_video)
+
+
+```
+
+
+
+```{r , out.width="60%"}
+#| label: fig-correlation-plot
+#| fig-cap: Correlation Between Member Activities
+
+
+# Activity Correlation Analysis
+activity_correlation <- df_transformed %>%
+  select(visit_heritage, visit_heritage_other_org, 
+         visit_heritage_overseas, buy_from_shop, buy_from_cafe, 
+         attend_event, attend_cultural_event, watch_video) %>%
+  cor()  # Calculate the correlation matrix
+
+new_names <- c("Heritage Visit", "Other Org Heritage", 
+               "Overseas Heritage", "Shop Purchase", 
+               "Cafe Purchase", "Event Attendance", 
+               "Cultural Event", "Video Watching")
+
+colnames(activity_correlation) <- new_names
+rownames(activity_correlation) <- new_names
+
+# 2. Visualise Activity Correlation
+corrplot(activity_correlation, method = "color", type = "upper", 
+         order = "hclust", tl.col = "black", 
+         tl.srt = 45, addCoef.col = "black", 
+         number.cex = 0.7)
+```
+
+
+Using a correlation matrix, we assessed how **frequently different activities** — such as visiting heritage sites, attending events, or making purchases — are associated with one another. In @fig-correlation-plot, the matrix visually represents these relationships through color-coded correlation coefficients, where shades of blue indicate positive correlations and red signifies negative ones. Darker colors denote stronger relationships.
+
+From @fig-correlation-plot, we observed that most activities show weak positive correlations, suggesting a slight tendency for some activities to overlap. For example, **"Shop Purchase" ,"Cafe purchase" and "Heritage Visit"** have a **weak positive correlation**, indicating that members who visit heritage sites may also be inclined to make purchases related to their visits, though this is not a strong relationship. Similarly, **"Heritage Visit" and "Event Attendance"** also show a **weak positive correlation**, suggesting that members interested in events might also value heritage site visits.
+
+This pattern could imply that members who visit heritage sites are likely to explore other on-site offerings, such as cafes and gift shops, making small purchases as part of their overall experience. These weak but meaningful associations suggest that enhancing the on-site experience with curated merchandise or food options could potentially increase member engagement and spending during heritage visits.
+
+However, several activities, such as **"Overseas Heritage" and "Cultural Event Attendance,"** exhibit **very low or even negligible correlations** with other activities, implying that engagement in these activities is relatively independent. This finding suggests that members engage in certain activities out of individual interest rather than as part of a broader pattern of activity engagement.
+
+These findings suggest that Heritage New Zealand Pouhere Taonga could consider initiatives such as promotional codes or bundled discounts for members. For example, offering a discount at on-site shops or cafes for members who attend events or visit heritage sites could encourage additional engagement and spending. Such targeted promotions could enhance the overall member experience, making visits more rewarding while fostering loyalty and increasing on-site activity.
+
+### Magazine Format Preferences and Optimal Distribution Frequency
+
+Building on the understanding of members' engagement patterns, we also looked at preferences regarding one of the core membership benefits: the organisation’s magazine. Recognising that communication preferences are evolving, the survey included questions about how members would like to receive the magazine — whether digitally, physically, or not at all — and the ideal frequency for physical copies.
+
+```{r}
+
+df_summary <- data_combined %>%
+  rename(prefer_magazine_type = Q6A) %>%  
+  mutate(prefer_magazine_type = case_when(
+    prefer_magazine_type == "digital" ~ "Digital",
+    prefer_magazine_type == "physical" ~ "Physical",
+    prefer_magazine_type == "not_important" ~ "Not Important"
+  ))
+
+d1 <- df_summary %>%
+  ggplot(aes(x = fct_infreq(prefer_magazine_type), fill = prefer_magazine_type)) +  # Reorder x-axis by frequency
+  geom_bar() +  
+  geom_text(stat = 'count', aes(label = ..count..), vjust = 2, size = 3) +  # Add labels
+  labs(title = "People Preference of Magazine",
+       x = "Magazine Categories",
+       y = "Count") +  # Set legend title
+  scale_fill_brewer(palette = "Set2") +  # Using a preset color palette
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  # Rotate x-axis labels for readability
+  guides(fill = "none")  # Remove legend
+
+```
+
+
+```{r magazine_frequency, echo = FALSE  , message = FALSE , warning=FALSE}
+# Clean and transform the data, then count the frequency of each category
+counts <- data_combined %>%
+  select(Q6B) %>%
+  na.omit() %>%  # Remove rows with NA values in Q6B
+  mutate(Q6B = recode(Q6B,
+                      `1` = "Once a year",
+                      `2` = "Twice a year",
+                      `3` = "Three times a year",
+                      `4` = "Quarterly")) %>%  # Replace numbers with descriptive labels
+  mutate(Q6B = factor(Q6B, levels = c("Once a year", "Twice a year", "Three times a year", "Quarterly", 
+                                      "Every two months", "Monthly"))) %>%  # Set the desired order of levels
+  count(Q6B)  # Count the frequency of each category
+
+
+# Plot a line chart using the counts
+d2 <- ggplot(counts, aes(x = Q6B, y = n, group = 1)) +  # group = 1 ensures all points are connected in one line
+  geom_line() +
+  geom_point() +  # Add points to the line chart
+  geom_text(aes(label = n), vjust = -0.5, size = 3) +  # Add labels above the points
+  labs(title = "Preferred Frequency for Physical Magazine",
+     x = "Frequency",
+     y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+```{r}
+#| label: fig-magazine
+#| fig-cap: Member Preferences for Magazine Format and Frequency
+
+grid.arrange(d1, d2, ncol = 2)
+```
+
+
+From @fig-magazine, we can see that a significant portion of members are open to digital magazines, with a notable preference shown in the bar chart: **215 members** indicated a preference for **digital**, compared to 161 who preferred physical copies, and 59 who expressed interest in forgoing the magazine altogether. This suggests that many members are receptive to a digital format, possibly due to convenience, environmental considerations, or cost savings.
+
+While **digital magazines** are the **preferred choice**, **physical copies** remain the **second most popular** option. This is likely influenced by the fact that a significant portion of the membership base consists of senior citizens, who may have a stronger preference for physical materials. This trend highlights the importance of offering a physical option to cater to the needs of older members, even as the organisation considers a shift towards digital formats.
+
+Additionally, for those who favor a physical magazine, members were asked about their preferred frequency of distribution. @fig-magazine shows that a majority of members would prefer receiving the magazine **three times per year**, followed by four and two times per year. This insight suggests that a quarterly or triannual distribution would likely satisfy most members' expectations while also potentially reducing production costs compared to a more frequent release.
+
+### Missing Benefits Analysis
+
+In response to questions about potential improvements to the membership program, members identified specific areas where they felt additional benefits could significantly enhance their experience.  @fig-missing-benefits-percentage highlights the top two suggestions, each chosen by **37.4%** and **37.0%** of respondents: **local and regional information** on activities and events and a comprehensive **member handbook** containing property details, maps, and other valuable resources. These responses indicate a clear interest in more localised, in-depth resources to help members better engage with and navigate Heritage New Zealand Pouhere Taonga’s offerings.
+
+```{r missing_benefits ,echo = FALSE  , message = FALSE , warning=FALSE}
+
+df_summary <- data_combined %>%
+  filter(!is.na(Q7),  Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7) %>%
+  select(Category, Q3_1:Q3_6)
+
+
+# Transform data format
+df_transformed <- df_summary %>%
+  mutate(
+    monthly_membership = ifelse(!is.na(Q3_1), 1, 0),
+    membership_donation = ifelse(!is.na(Q3_2), 1, 0),
+    family_content = ifelse(!is.na(Q3_3), 1, 0),
+    member_handbook = ifelse(!is.na(Q3_4), 1, 0),
+    volunteering_opportunities = ifelse(!is.na(Q3_5), 1, 0),
+    local_info_events = ifelse(!is.na(Q3_6), 1, 0)
+  ) %>% select(-c(Q3_1:Q3_6))
+```
+
+```{r missing_benefits_percentage , echo = FALSE  , message = FALSE , warning=FALSE}
+#| label: fig-missing-benefits-percentage
+#| fig-cap: Percentage Importance of Potential Future Benefits to Members
+
+
+# Calculate the frequency and percentage of each benefit
+benefit_summary <- df_transformed %>%
+  select(-Category) %>%  # Exclude the Q7 column
+  summarise(
+    monthly_membership = sum(monthly_membership, na.rm = TRUE),
+    membership_donation = sum(membership_donation, na.rm = TRUE),
+    family_content = sum(family_content, na.rm = TRUE),
+    member_handbook = sum(member_handbook, na.rm = TRUE),
+    volunteering_opportunities = sum(volunteering_opportunities, na.rm = TRUE),
+    local_info_events = sum(local_info_events, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = everything(), names_to = "Benefit", values_to = "Count") %>%
+  mutate(Percentage = (Count / sum(Count)) * 100)
+
+benefit_summary <- benefit_summary %>%
+  mutate(Benefit = recode(Benefit,
+                              "monthly_membership" = "Monthly Membership",
+                              "membership_donation" = "Membership Donation",
+                              "family_content" = "Family Content",
+                              "member_handbook" = "Member Handbook",
+                              "volunteering_opportunities" = "Volunteering Opportunities",
+                              "local_info_events" = "Local Info & Events"))
+  
+
+benefit_summary <- benefit_summary %>%
+  mutate(Category = ifelse(rank(-Percentage) <= 2, "Top 2", "Other"))
+
+# Create the ggplot
+ggplot(benefit_summary, aes(x = reorder(Benefit, -Percentage), y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.1f%%", Percentage)), vjust = 0.5) +
+  labs(title = "Importance of Future Potential Benefits to Members",
+       x = "Benefit",
+       y = "Percentage of Members") +
+  scale_fill_manual(values = c("Top 2" = "#c5d26c", "Other" = "grey")) +  # Set color for Top 2 and use a color from Set2 for others
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+The emphasis on local information suggests that members highly value opportunities to participate in heritage activities close to home and would benefit from additional guidance on regional events. This focus reflects a desire for a stronger, more personal connection to heritage within members’ own communities. Similarly, the call for a detailed **member handbook** demonstrates a need for a centralised resource that can enrich the membership experience by providing **practical information, context, and insights about heritage sites.** A well-organised handbook — potentially available in both digital and physical formats — could serve as a valuable tool, helping members to plan their visits and engage more deeply with heritage sites.
+
+Other suggested benefits, while selected by fewer members, reveal additional areas of interest within the membership base. These include:
+
+1. Volunteering Opportunities (12%): Some members expressed a desire to contribute actively to heritage preservation, suggesting that structured volunteer programs could appeal to those who wish to have a more hands-on role in supporting the organisation’s mission.
+
+2. Family-Oriented Content (6.6%): A subset of members indicated interest in family-friendly resources and activities, which could encourage multi-generational engagement and foster a connection to heritage among younger members.
+
+3. Monthly Membership Payment Options (1.2%): Though less frequently mentioned, flexible payment options could make membership more accessible to those who prefer spreading costs over time, potentially attracting younger or budget-conscious members.
+
+These findings indicate that enhancing the membership program with **additional resources** and **localised information** could positively impact member satisfaction and engagement. By addressing these specific needs, Heritage New Zealand Pouhere Taonga has the opportunity to create a more tailored, enriching experience that fosters a stronger sense of community and connection among members. This approach aligns well with the organisation’s mission to make heritage accessible, engaging, and relevant, supporting its goal to build lasting relationships with its diverse membership base.
+
+## Membership Satisfaction and NPS Insights
+
+### Membership Satisfaction Overview
+
+After identifying potential areas for enhancement in the membership program, we turned to a broader evaluation of overall member satisfaction to understand how well the current offerings meet member expectations.
+
+The Membership Satisfaction Gauge shown here illustrates the average satisfaction score on a scale of 0 to 10. The scale is divided into three satisfaction levels:
+
+1. **0–4 (Low Satisfaction):** Representing dissatisfaction.
+2. **5–7 (Moderate Satisfaction):** Indicating a neutral or moderately satisfied experience.
+3. **8–10 (High Satisfaction):** Reflecting high satisfaction and approval.
+
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{image/newplot.png}
+    \caption{How Satisfied Are You with Your Membership?}
+    \label{fig:image1}
+\end{figure}
+
+With an **average satisfaction score of 8.43** , most members fall within the high satisfaction range, suggesting that the current membership benefits and services resonate well with the majority of respondents. This high score indicates that Heritage New Zealand Pouhere Taonga has built a strong foundation aligned with member needs, fostering a generally positive experience.
+
+However, it’s important to consider **potential response bias** in interpreting these results. Members who are generally satisfied may be more inclined to respond to the survey, while those who are less satisfied might be underrepresented. Additionally, over time, members may have adjusted to the existing membership benefits and found a plan that fits their preferences, which could contribute to the high satisfaction level. Thus, while the results indicate overall contentment, they may not fully capture the views of members who are less engaged or less satisfied.
+
+Despite this potential bias, the satisfaction score highlights an opportunity for improvement among members in the moderate satisfaction range (5-7). Enhancing offerings with more localised information and a comprehensive member handbook could elevate their experience, potentially moving more members into the high satisfaction category.
+
+
+**Satisfaction Score by Membership Type**
+
+Following the overall Membership Satisfaction Analysis, which revealed an average satisfaction score of 8.43, we delved deeper by examining satisfaction levels across different membership types. This breakdown offers a more granular perspective on which groups may feel particularly well-served and where there may be room for improvement.
+
+
+```{r }
+# Step 1: Create a Churn Risk Indicator
+# Define churn risk based on low satisfaction (Q9 <= 4) or low NPS (Q12 <= 6)
+data_logistic <- data_combined %>%
+  mutate(Churn_Risk = ifelse(Q9 <= 4 | Q12 <= 6, 1, 0))  # 1 indicates high risk of churn, 0 indicates low risk
+
+# Step 2: Prepare the Data
+# Convert membership type to a factor
+data_logistic$Q7 <- as.factor(data_logistic$Q7)
+
+# Select features for the model
+churn_data <- data_logistic %>%
+  filter(!is.na(Churn_Risk), !is.na(Q9), !is.na(Q12), !is.na(Q7)) %>%
+  select(Churn_Risk, Q9, Q12, Q7)
+
+# Step 3: Build a Logistic Regression Model
+churn_model <- glm(Churn_Risk ~ Q9 + Q12 + Q7, data = churn_data, family = binomial)
+
+# Step 4: Get Model Summary
+# summary(churn_model)
+
+# Step 5: Predict Churn Probabilities
+churn_data$Predicted_Probability <- predict(churn_model, churn_data, type = "response")
+
+# Step 6: Identify High-Risk Members
+high_risk_members <- churn_data %>%
+  filter(Predicted_Probability > 0.5)  # Using a threshold of 0.5 for high risk
+
+# Display high-risk members
+# head(high_risk_members)
+
+```
+
+
+```{r}
+#| label: fig-membership-type-satisfaction
+#| fig-cap: Average Satisfaction Score by Membership Type with Response Counts
+
+# Group data by membership type and calculate average satisfaction
+satisfaction_by_type <- data_combined  %>%
+  filter(!is.na(Q7), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  rename(Category = Q7)%>%
+  group_by(Category) %>%
+  summarise(Average_Satisfaction = mean(Q9, na.rm = TRUE), 
+            Response_Count = n()) %>%  # Also count the number of responses
+  arrange(desc(Average_Satisfaction))
+            
+# Define a threshold for a low number of responses
+low_response_threshold <- 5
+
+# Prepare the data for plotting
+satisfaction_by_type <- satisfaction_by_type %>%
+  mutate(Above_Average = ifelse(Average_Satisfaction >= 8.43, TRUE, FALSE))
+
+# Create the bar chart using ggplot2
+ggplot_chart <- ggplot(satisfaction_by_type, aes(x = reorder(Category, -Average_Satisfaction), y = Average_Satisfaction, fill = Above_Average)) +
+  geom_bar(stat = "identity", color = "black") +
+  scale_fill_manual(values = c("grey", "#c5d26c"), guide = FALSE) + # Conditional fill color
+  geom_text(aes(label = paste("Avg:", round(Average_Satisfaction, 2), "\nResp:", Response_Count)), 
+            position = position_stack(vjust = 0.5), color = "black", size = 3) + # Simplified text and smaller size
+  geom_hline(yintercept = 8.43, linetype = "dashed", color = "darkgreen") + # Threshold line
+  labs(
+    title = "Average Satisfaction by Membership Type",
+    x = "Membership Type",
+    y = "Average Satisfaction",
+    caption = "Note: 'Avg' refers to Average Satisfaction score, and 'Resp' refers to the number of responses." # Add caption
+  ) +
+  theme_minimal()
+
+# Add a warning annotation if any group has low responses
+low_response_members <- satisfaction_by_type %>%
+  filter(Response_Count < low_response_threshold)
+
+if (nrow(low_response_members) > 0) {
+  warning_text <- paste("Note: Membership types with <", low_response_threshold, "responses may not be reliable.")
+  
+  ggplot_chart <- ggplot_chart +
+    annotate("text", x = Inf, y = Inf, label = warning_text, 
+             hjust = 1.1, vjust = 1.5, color = "blue", size = 3.5)
+}
+
+# Print the ggplot chart
+print(ggplot_chart)
+
+```
+
+The Satisfaction Score by Membership Type (see @fig-membership-type-satisfaction) highlights both consistency and variation in satisfaction levels:
+
+1. **Student Membership** scored the highest with a perfect 10, indicating very high satisfaction. However, this result is based on a single response, which limits its representativeness. While promising, further responses from student members would provide a clearer understanding of their overall satisfaction.
+
+2. **Joint Life Membership**, with an average satisfaction score of 9 from 9 responses, also shows strong approval, suggesting that members with long-term, partnered commitments feel particularly satisfied with their membership benefits and experience.
+
+3. **Life and Joint Senior Memberships** have scores close to the overall average, at 8.89 and 8.46 respectively. These results suggest that members in these categories are generally content, finding that the program meets their expectations.
+
+4. **Senior Membership**, with a score that matches the average at 8.43, reflects moderate satisfaction from older members, suggesting that this group’s needs are mostly met.
+
+5. **Family and Individual Memberships** scored slightly below the average, with 8.25 and 8.12 respectively. Given the relatively larger number of responses in these categories, these scores indicate that members in these groups may perceive some gaps in benefits or resources that could enhance their experience.
+
+This analysis indicates that while the program effectively meets the needs of most members, certain groups — particularly Family and Individual members — might benefit from more targeted benefits or engagement efforts. These lower scores suggest opportunities for Heritage New Zealand Pouhere Taonga to explore additions or adjustments tailored to these members’ unique needs, which could help elevate their satisfaction.
+
+\pagebreak
+
+**Membership Type Suitability and Potential Response Bias**
+
+Following our analysis of satisfaction by membership type, we further examined whether members felt their current membership classification was suitable. This step helps gauge the alignment between the membership options available and the actual needs of the members.
+
+```{r }
+#| label: fig-membership-stability
+#| fig-cap: Member Satisfaction with Current Classification Categories
+
+
+df_summary <- data_combined %>% select(Q5_1, Q5_2)
+
+# Replace NA values with "Other Answers" and "suit" with "Suitable Category"
+df_summary$Q5_1[is.na(df_summary$Q5_1)] <- "Other Answers"
+df_summary$Q5_1[df_summary$Q5_1 == 'suit'] <- "Suitable Category"
+
+# Calculate the counts of each response
+response_counts <- table(df_summary$Q5_1)
+response_percent <- prop.table(response_counts) * 100
+
+# Plot the bar chart with percentages
+ggplot(as.data.frame(response_percent), aes(reorder(x = Var1, -Freq), y = Freq, fill = Var1)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = sprintf("%.1f%%", Freq)), vjust = 0.5) +
+  labs(title = "Are Members Satisfied with the Current Classification?",
+       x = "Response",
+       y = "Percentage", 
+    fill = "Response Type") +
+  scale_fill_manual(values = c("Suitable Category" = "#c5d26c", "Other Answers" = "grey")) +
+  theme_minimal()
+```
+
+@fig-membership-stability reveals that **93.3% of respondents** indicated they were **satisfied** with their current classification, suggesting that the majority of members feel they have selected a membership type that meets their needs. Only **6.7%** of members chose **"Other Answers,"** indicating a minority who may feel that the existing categories do not fully align with their expectations.
+
+However, it’s essential to consider potential response **bias** in this analysis. Since the survey respondents are active members, it’s reasonable to assume that they have already **identified a membership type** that suits their needs. Those who were unable to find a suitable type might have opted not to join at all, and thus, their perspectives would not be represented in this data. This limitation highlights that while current members are generally satisfied with the membership categories, there may be unaddressed needs among non-members who chose not to join due to lack of a suitable option.
+
+
+### Insights from Net Promoter Score (NPS)
+
+The Net Promoter Score (NPS) is a widely used measure for gauging customer loyalty and satisfaction. In this analysis, we asked members, "Will you recommend membership to your friend or colleague?" and categorised their responses into Promoters, Passives, and Detractors based on their likelihood to recommend. These categories are defined as @tbl-NPS-categories:
+
+```{r ,echo = FALSE  , message = FALSE , warning=FALSE}
+#| label: tbl-NPS-categories
+#| tbl-cap: NPS categories
+
+data.frame(
+  'Net Promoter Level' = c("Promoters", "Passives", "Detractors"),
+  'Net Promoter Score' = c("9-10", "7-8", "0-6"), 
+  'Definition' = c(
+    "Enthusiastic members who are highly likely to recommend the membership", 
+    "Satisfied members who may recommend but are less enthusiastic", 
+    "Members who are unlikely to recommend and may even discourage others from joining"
+  ),
+  check.names = FALSE
+) %>% kable()
+
+
+```
+
+
+```{r}
+
+nps_data <- data_combined %>%
+  mutate(NPS = case_when(
+    Q12 >= 9 ~ "Promoter",
+    Q12 >= 7 & Q12 <= 8 ~ "Passive",
+    Q12 <= 6 ~ "Detractor"
+  )) %>%
+  summarise(
+    Promoters = sum(NPS == "Promoter") / n() * 100,
+    Passives = sum(NPS == "Passive") / n() * 100,
+    Detractors = sum(NPS == "Detractor") / n() * 100
+  ) %>%
+  mutate(NPS_Score = Promoters - Detractors)
+
+
+# Create a data frame for visualisation
+nps_viz_data <- data.frame(
+  Category = c("Promoters", "Passives", "Detractors"),
+  Percentage = c(nps_data$Promoters, nps_data$Passives, nps_data$Detractors)
+)
+```
+
+
+```{r}
+#| label: fig-npsplot
+#| fig-cap: "NPS Breakdown of Member Willingness to Recommend the Organisation - Promoters, Passives, and Detractors"
+
+ggplot(nps_viz_data, aes(x = Category, y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = paste0(round(Percentage, 2), "%")),  # Add percentage sign
+            position = position_stack(vjust = 0.5),  # Adjusts the position of the text
+            color = "white",  # Change the text color to improve visibility
+            size = 5) +  # Adjust the size of the text
+  labs(title = "NPS Breakdown: Promoters, Passives, and Detractors",
+       x = "Category", y = "Percentage") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") 
+
+```
+
+
+**Analysis of NPS Results**
+
+
+The NPS results are presented in @fig-npsplot, breaking down the membership base into the three NPS categories:
+
+- **Promoters** make up the largest segment, accounting for **53.1%** of responses. This indicates a strong base of satisfied members who are likely to promote the membership positively. Their high level of satisfaction suggests that our offerings align well with their expectations and needs.
+  
+- **Passives** represent **38.39%** of respondents. While these members are generally satisfied, they are less enthusiastic about actively recommending the membership. This group may present an opportunity for targeted engagement efforts to enhance their experience and encourage them to become Promoters.
+
+- **Detractors** account for only **8.51%** of respondents. Although this is a small percentage, it highlights a segment of members who may have concerns or unmet needs. Understanding and addressing the feedback from Detractors could help reduce dissatisfaction and improve retention.
+
+**Implications**
+
+The NPS analysis shows a predominantly positive response, with over half of the members identified as Promoters. However, the substantial proportion of Passives indicates room for growth in member engagement. Strategies focused on deepening engagement with Passives and addressing any concerns raised by Detractors could enhance overall satisfaction and strengthen loyalty. These insights are valuable for shaping future membership strategies aimed at maximising member advocacy and satisfaction.
+
+
+## Information Source Analysis
+
+To understand the information sources that our members rely on, we explored questions such as: **"What sources do you rely on for your news and information?"** and **"Information source preferences by membership type."** The results are visualised in two distinct plots @fig-information-sources-analysis and @fig-bubble-chart, each providing insights into members' preferred sources and how these preferences vary across membership types.
+
+```{r , out.width = "90%"}
+#| fig-cap: Top Information Sources Used by Members, Highlighting the Most Popular Choices
+#| label: fig-information-sources-analysis
+
+# Analysis of information sources (Q12)
+info_sources <- data_combined %>%
+  select(Q11_1:Q11_12) %>%
+  pivot_longer(cols = everything(), names_to = "Source", values_to = "Selected") %>%
+  filter(!is.na(Selected)) %>%
+  group_by(Source) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+# Re-code the sources
+info_sources$Source <- recode(info_sources$Source,
+                              Q11_1 = "Social Media",
+                              Q11_2 = "E-newsletters",
+                              Q11_3 = "Newspapers",
+                              Q11_4 = "Online News Websites or Apps",
+                              Q11_5 = "Magazines",
+                              Q11_6 = "Blogs",
+                              Q11_7 = "Television",
+                              Q11_8 = "On Demand TV",
+                              Q11_9 = "Streaming Services",
+                              Q11_10 = "Radio",
+                              Q11_11 = "Podcasts",
+                              Q11_12 = "Other")
+
+# Create a new column to categorise the sources
+info_sources <- info_sources %>%
+  mutate(Category = ifelse(rank(-Count) <= 4, "Top 4", "Other"))
+
+# Create the ggplot
+ggplot(info_sources, aes(x = reorder(Source, -Count), y = Count, fill = Category)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Count), vjust = 0.5, size = 4) +
+  labs(title = "Top Sources for Information Among Members",
+       x = "Source", y = "Number of Members") +
+  scale_fill_manual(values = c("Top 4" = "#c5d26c", "Other" = "grey")) +  # Set colors
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 65, hjust = 1), legend.position = "none")
+```
+
+
+
+```{r ,fig.width=7, fig.height=5, fig.align="center", out.width="80%"}
+#| label: fig-bubble-chart
+#| fig-cap: Bubble Chart of Information Source Preferences By Membership Type
+
+news_segmentation <- data_combined %>%
+  filter(!is.na(Q7), !is.na(Q4), Q7 != "not_sure") %>%
+  mutate(Q7 = case_when(
+    Q7 == "family" ~ "Family",
+    Q7 == "individual" ~ "Individual",
+    Q7 == "life" ~ "Life",
+    Q7 == "life(joint)" ~ "Joint Life",
+    Q7 == "senior_citizen" ~ "Senior",
+    Q7 == "senior_citizen(Joint)" ~ "Joint Senior",
+    Q7 == "student" ~ "Student",
+  )) %>%
+  # Select the columns related to the question
+  select(Q7, Q11_1:Q11_12) %>%
+  pivot_longer(cols = starts_with("Q11"), names_to = "Source", values_to = "Selected") %>%
+  filter(!is.na(Selected)) %>%
+  mutate(Source = recode(Source,
+                         Q11_1 = "Social Media",
+                         Q11_2 = "E-newsletters",
+                         Q11_3 = "Newspapers",
+                         Q11_4 = "Online News Websites or Apps",
+                         Q11_5 = "Magazines",
+                         Q11_6 = "Blogs",
+                         Q11_7 = "Television",
+                         Q11_8 = "On-demand Television",
+                         Q11_9 = "Subscription Streaming Services",
+                         Q11_10 = "Radio",
+                         Q11_11 = "Podcasts",
+                         Q11_12 = "Other")) %>%
+  # Group by membership type and information source
+  group_by(Q7, Source) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  # Get the top three sources for each membership type
+  arrange(Q7, desc(Count)) 
+  
+
+ggplot(news_segmentation, aes(x = Source, y = Q7, size = Count, color = Count)) +
+  geom_point(alpha = 0.7) +
+  scale_size_continuous(range = c(2, 12)) +
+  scale_color_gradient(low = "#c5d26c", high = "black") +
+  labs(title = "Information Source Preferences by Membership Type",
+       x = "Information Source", y = "Membership Type") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+**1. Overall Popularity of Information Sources**
+
+The @fig-information-sources-analysis shows the popularity of various information sources based on the total number of members who rely on each one. This analysis highlights:
+
+- **Online News Websites or Apps** are the most popular source, with 237 members indicating reliance on digital platforms for their information.
+
+- **Television, Newspapers, and Radio** follow closely, with 182, 181, and 172 members, respectively, choosing these traditional media sources. This suggests that traditional media still plays a significant role in members' information consumption.
+
+- **Magazines, Social Media, and E-newsletters** are moderately popular, reflecting diverse preferences for both print and digital formats.
+
+- Less commonly used sources include **On Demand TV, Podcasts, Streaming Services, and Blogs**, with fewer than 50 members relying on these sources. This indicates a lower engagement with non-traditional or on-demand formats for news and information.
+
+**2. Information Source Preferences by Membership Type**
+
+The @fig-bubble-chart provides a breakdown of information source preferences across different membership categories. This bubble plot uses bubble size and color to indicate the frequency of each source by membership type, revealing several trends:
+
+- **Senior and Joint Senior Members** show a higher preference for **Traditional Media** sources like **Television** and **Newspapers**, indicating that older members may be more inclined toward conventional media.
+
+- **Students** tend to rely on **Social Media** and **Online News Websites or Apps**, suggesting a stronger preference for digital and easily accessible sources. However, as there is only one student member in the sample, this finding may be subject to bias.
+
+- **Individual and Family Members** demonstrate varied preferences, with notable use of **Online News Websites or Apps** and **Radio and Social Media**, reflecting an interest in digital formats. 
+
+- **Life and Joint Life Members** do not use **Blogs**, **Podcasts**, or **Subscription Streaming Services** at all.
+
+**3. Key Insights**
+
+- **Diverse Media Preferences**: The results indicate that while online news platforms are widely preferred across most membership types, traditional media such as television, newspapers, and radio still hold significant value, especially among older members.
+
+- **Implications for Communication Strategy**: These findings suggest that a multi-channel communication strategy could be beneficial, with an emphasis on online platforms to reach a broad audience, and traditional media to engage older or long-standing members.
+
+These insights can guide future strategies for communicating with members, ensuring that information is distributed across the channels they are most likely to engage with, thus maximising reach and relevance.
+
+
+## Analysis of Key Factors for Member Retention
+
+The question, **"What keeps you as members?"** was posed to understand the features and values that members appreciate most about the organisation. Responses were gathered from both survey data and a focus group, and the analysis is presented through three visualisations. @fig-word-cloud and @fig-survey-word-count visuals represent word frequency from survey responses, while the third provides insights from focus group interview text analysis. These were adapted from a comprehensive guide (@Mhatre2020).
+
+### Survey Data Analysis
+
+1. **Word Cloud Visualisation** from @fig-word-cloud:
+
+   - The word cloud derived from the survey responses reveals **"heritage"** as the most prominent term, underscoring its significance in members' decision to stay. Other frequent terms include **"sites," "places," "NZ"** (New Zealand), **"overseas," "access,"** and **"free."** These terms suggest that members value access to heritage sites, both locally and internationally, as well as the organisation’s mission to preserve and promote heritage.
+   
+   - Words like **"supporting," "helping,"** and **"preservation"** also appear, indicating a strong sense of community and purpose among members, who feel they are contributing to a valuable cause.
+
+2. **Bar Chart of Most Common Words** from @fig-survey-word-count:
+
+   - The bar chart reinforces insights from the word cloud. **"Heritage"** stands out as the top word, followed closely by **"NZ," "sites,"** and **"places."** Terms such as **"overseas"** and **"free"** reflect members’ appreciation for the tangible benefits of free or discounted access to heritage sites, both within and outside New Zealand.
+   
+   - Additional frequent words like **"magazine"** and **"access"** highlight other valued membership features, with members valuing the content provided through the magazine and the easy access they receive to various sites.
+
+```{r}
+
+# Generate a word cloud from open-ended responses
+# Convert responses to lowercase
+responses <- tolower(data_combined$Q8)
+
+# Split responses into individual words
+word_list <- unlist(strsplit(responses, "\\s+"))
+
+# Remove punctuation from the words
+word_list <- gsub("[[:punct:]]", "", word_list)
+
+# Filter out common stop words
+filtered_words <- word_list[!word_list %in% stopwords("en")]
+
+# Calculate word frequencies
+word_freq <- data.frame(table(filtered_words))
+colnames(word_freq) <- c("word", "freq")
+```
+
+```{r, eval=FALSE}
+# Create a word cloud
+png("image/wordcloud.png", width = 800, height = 800, res = 300) 
+# Set a higher resolution and larger dimensions
+par(mar = c(0, 0, 0, 0))                                         # Set all margins to 0
+wordcloud(words = word_freq$word,                             # Generate the word cloud
+          freq = word_freq$freq, 
+          scale = c(4, 0.5), 
+          colors = brewer.pal(8, "Dark2"), 
+          random.order = FALSE,
+          rot.per = 0.35, 
+          min.freq = 4)
+dev.off()                                                     # Close the device to save the image
+
+```
+
+![Survey Data - Most Common Words in Response to the Question, 'What Keeps You as Members?'](image/wordcloud.png){#fig-word-cloud}
+
+```{r}
+#| label: fig-survey-word-count
+#| fig-cap: Survey Data - Most Common Words in Response to the Question, 'What Keeps You as Members?'
+
+# Display the top 10 most common words
+word_freq <- word_freq %>% 
+  top_n(15, freq) 
+
+
+ggplot(word_freq, aes(x = reorder(word, freq), y = freq, fill = freq >= 50)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_manual(values = c("FALSE" = "grey", "TRUE" = "#c5d26c"), 
+                    labels = c("FALSE" = "Count ≥ 50", "TRUE" = "Count > 50")) +
+  labs(title = "The Most Common Words in Question: What keeps you as members?",
+       x = "Words",
+       y = "Frequency",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+\pagebreak
+
+### Focus Group Interview Analysis 
+
+**1. Focus Group Word Frequency **:
+
+   - In @fig-focus-word-count, the analysis of interview transcripts from the focus group reveals a similar emphasis on **"heritage," "membership,"** and **"supporting."** However, unique terms like **"feel," "buildings,"** and **"properties"** emerge, indicating a personal connection to heritage preservation, which might include specific sites or properties that members feel strongly about.
+   
+   - Terms such as **"involved"** and **"organisation"** suggest that focus group participants appreciate a sense of belonging and involvement within the organisation. They appear to value not just the tangible benefits but also the community aspect of membership, feeling that their membership plays a role in preserving something meaningful.
+
+
+```{r,echo = FALSE  , message = FALSE , warning=FALSE}
+
+# Create a data frame with the interview data
+interview_data <- data.frame(
+  Participant = c(
+    "A", "B", "C", "A", "D", "D", "C", "F", "D", "E", 
+    "C", "F", "D", "E", "B", "G", "H", "I", "J", "K", "L", "M"
+  ),
+  Response = c(
+    "For me and my husband, it's the benefits. But it's also not that we avail much of the benefits at all, but it's the cause. That's what it is. OK, supporting heritage.",
+    "It's the same for me. I want to support what you are doing. Yeah. Yeah.",
+    "One of the nice things about having some of these is that I'm at the age now where I'm starting to think perhaps I shouldn't have to live for another 10 years in my motor home. I should be starting to move into a retirement village. And there's nothing better than to go to a retirement village and say, would you like these to start the conversation? And you give them three or four of these magazines as an introduction to a person you've never met before. Yeah. And then I'm just going to hop back to your previous sort of comment. With technology today, why have a membership card when you can have it on your cell phone? Membership cards must have a big cost for you people to produce. And on your application for membership, you have to say, do you want it on a cell phone, or do you want a physical card? Because most people nowadays do everything on their cell phone.",
+    "What about security?",
+    "From my point of view, I like the idea that I am, as everyone's kind of said, helping to contribute, even in a tiny way, to saving these buildings. It also has to have a somewhat semi-professional interest because I work with heritage buildings. Feeling like I'm contributing is the thing that's going to keep me continuing to be a member.",
+    "I just like visiting all the properties. It'll keep me happy. I'm happy to go back to other ones that I've already been to. I like that you offer opportunities to visit properties that aren't necessarily on the visit list as well. That's nice. I’ve been planning some of my travel around specifically trying to add extra properties in there.",
+    "For me, it's just an important organisation for the country.",
+    "It's about supporting the organisation, but it is the heritage. Supporting heritage rather than any particular benefits.",
+    "I think it's supporting the organisation as well. Fine when I knew it coming back here as a perk.",
+    "I really feel morally obliged because I'm so into heritage, dressing up my kids in 1820s clothes and photographing them when we go to properties. I feel very chill; I feel like I should be involved in voicing the organisation in some place.",
+    "I like the feeling of making a contribution to something that I think is really important.",
+    "I'm a history buff, and my mother was originally a member for many years. I've inherited her interest in preservation and advocacy to protect buildings, even in the Auckland region, which means so much to the whole aspect of our society.",
+    "That sense of place with the view of us. I think seeing them is how we feel engaged and feel like this is our place.",
+    "Perhaps it is worth looking at different membership levels to have a bigger financial contribution to more than just producing magazines.",
+    "I'd like to see heritage in New Zealand involved. The magazine has shown me some really good photographs, but there was a place we visited that was desolate. We couldn’t find anything to really look at initially, but on our return, there was a group who remade some of the defensive networks. We had to pay separately to see them, but they provided us a good talk about the place and its history.",
+    "It's no different from the reason why we joined—to support maintaining history for future generations. It's what our priorities are when we're looking at our budget.",
+    "That might create confusion. I like things staying the same because unless I want to concentrate on them, it's easier to just know what the go is and stick to it more or less.",
+    "So then what do younger members want? It's all very well to say to us what do we want to do when we renew, but what about what people in their 20s and 30s would want? Once we're no longer here, who's going to be supporting it unless you're growing the next generation?",
+    "That’s why I think noting all the sites in the magazine or in your email newsletter is important. It gives focus and alerts us to sites we may not have seen. If there’s a project that any one of us wants to go and help with, we have that information regularly. I know some younger members will get into projects if they know about them.",
+    "Over the past months, I've been involved with producing photographs of old abandoned buildings where I live. I’ve seen many historically relevant buildings facing demolition due to neglect, which is disheartening. By having heritage membership, I can advocate for preservation.",
+    "We have a 15,000 membership base. Your magazine only takes articles by commission, but there’s so much relevant information that could engage our members.",
+    "Those stories that we can contribute should go into the monthly newsletters."
+  ),
+  stringsAsFactors = FALSE
+)
+```
+
+
+```{r}
+#| label: fig-focus-word-count
+#| fig-cap: Focus Group - Most Common Words in Response to the Question, 'What Keeps You as Members?'
+
+# Tokenize the responses into words and remove stop words
+tidy_data <- interview_data %>%
+  unnest_tokens(word, Response) %>%
+  anti_join(stop_words, by = "word")
+
+# Count word frequency
+word_counts <- tidy_data %>%
+  count(word, sort = TRUE) %>%
+  ungroup()
+
+# Count word frequency
+word_counts <- tidy_data %>%
+  count(word, sort = TRUE) %>%
+  ungroup()
+
+# Display the top 10 most common words
+top_words <- word_counts %>% 
+  top_n(10, n) 
+
+ggplot(top_words, aes(x = reorder(word, n), y = n, fill = n >= 5)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_manual(values = c("FALSE" = "grey", "TRUE" = "#c5d26c"), 
+                    labels = c("FALSE" = "Count ≥ 5", "TRUE" = "Count > 5")) +
+  labs(title = "The Most Common Words in Question: What keeps you as members?",
+       x = "Words",
+       y = "Frequency",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+```
+
+\pagebreak
+
+**Key Insights and Recommendations**
+
+- **Heritage and Access**: Both the survey and focus group analyses highlight heritage preservation as a core factor for member retention. Access to heritage sites, both locally and internationally, is a significant motivator, which the organisation may continue to emphasise in its benefits.
+
+- **Sense of Purpose**: Words related to supporting and helping suggest that members value the organisation’s mission and feel that their membership contributes to a worthwhile cause. Enhancing communication around the impact of member support on heritage preservation could strengthen retention.
+
+- **Community and Belonging**: The focus group data reveals that members feel connected to the organisation beyond just the benefits. This insight suggests that building a community-focused environment and fostering a sense of involvement may enhance loyalty and satisfaction.
+
+These findings can inform membership retention strategies by focusing on heritage access, promoting the impact of member contributions, and building a stronger sense of community among members.
+
+## Dashboard
+
+### Interactive Shiny App for Enhanced Understanding and Feasibility
+
+To enhance Heritage New Zealand Pouhere Taonga's understanding of the survey findings, we developed an interactive Shiny app using R Shiny (@shiny). The primary motivation behind creating this app was to provide the organisation with a centralised, accessible tool that presents survey insights in a clear, engaging, and actionable way. Rather than relying on static reports, this app allows users to explore the data dynamically, making it easier for decision-makers to identify patterns and trends relevant to the membership program.
+
+
+**Features and Content of the App:**
+
+The Shiny app includes visual representations for all the key survey questions, allowing for an interactive exploration of the survey responses. Key features include:
+
+1. Overview Dashboard: A summary section that provides a quick snapshot of overall satisfaction levels, key insights, and response counts, setting the stage for a deeper dive into specific survey areas.
+
+2. Satisfaction Analysis: Interactive charts and plots display average satisfaction scores by membership type, overall satisfaction distribution, and any differences in satisfaction among various demographic groups.
+
+3. Membership Preferences: Visualisations that show preferences for different membership categories, willingness to pay, and suggestions for new benefits, helping the organisation understand what members value the most.
+
+4. Benefits and Features Evaluation: Detailed views on which current benefits members find most valuable and which additional features they would like to see, providing direct guidance on areas for enhancement.
+
+5. Interactive Filters and Drills: Users can filter and drill down into data based on specific membership types, satisfaction ranges, and other factors, allowing for more tailored analysis and insights.
+
+
+**Value and Impact:**
+
+This Shiny app serves as a practical tool for Heritage New Zealand Pouhere Taonga, enhancing the feasibility and accessibility of survey insights. By providing a data-driven resource, the app empowers decision-makers to:
+
+1. Effortlessly navigate through survey data and uncover actionable insights.
+
+2. Make informed decisions about enhancing membership benefits, adjusting pricing structures, and prioritizing new initiatives based on real member feedback.
+
+3. Foster a culture of evidence-based decision-making that aligns with the organisation’s mission to engage and serve its members effectively.
+
+To explore the interactive Shiny app we developed, please visit [this link](https://ajen0022.shinyapps.io/HNZPT_membership_project/).
+
+# Discussion	
+
+## Limitation 
+
+Throughout the analysis process, we identified several limitations that may have influenced the scope, accuracy, and depth of the insights gained. These limitations reveal specific areas in the data and methodology where constraints may have impacted the findings, particularly regarding the diversity of member representation, response options, data types, and analysis techniques. Addressing these issues in future research could enhance the robustness of the analysis and provide a more comprehensive understanding of the membership base. The following points outline the primary limitations observed and offer suggestions for potential improvements.
+
+**1. Uneven Membership Type Distribution:** The membership distribution within the dataset is uneven, with a significant portion of members falling under the senior citizen category. This demographic imbalance means that other age groups, such as students, young adults, and middle-aged members, are underrepresented. Consequently, the analysis may not fully capture the perspectives of these less-represented groups, potentially skewing insights toward senior citizens' preferences and needs. To address this, future recruitment or outreach strategies could target a broader demographic, ensuring more balanced feedback from all age groups.
+
+**2. Survey Data Constraints:** The survey used predetermined options for most questions, which limited respondents to selecting from a fixed list of answers. This restriction may introduce response bias, as participants may have been unable to fully express their views if their preferred option was not available in the choices provided. While offering fixed options simplifies data analysis, it can overlook nuanced or unique perspectives, particularly if respondents feel forced to select the “closest” answer that may not entirely reflect their thoughts.
+
+**3. Focus Group Data Constraints:** The focus group data consisted primarily of text responses from a limited number of participants (about 6–7 members each session), which restricts the generalisability of findings from this qualitative data. Furthermore, textual data from focus groups is time-consuming to analyse and can lack the richness of insights that a more extensive participant base might provide. Increasing the number of focus group participants or supplementing this data with quantitative methods could strengthen the breadth and reliability of insights.
+
+**4. Challenges with Categorical Data:** The dataset predominantly contains categorical variables, which constrains the types of analytical techniques available. This data structure restricts the analysis primarily to methods like text analysis, correspondence analysis, and data visualisation, making it challenging to apply more advanced statistical or predictive modeling methods. Efforts to incorporate machine learning models yielded low accuracy, indicating that these techniques may not be suitable for this categorical-heavy data. For future studies, combining categorical data with quantitative measures could enhance the robustness and depth of analysis, enabling more sophisticated statistical and predictive analyses.
+
+**5. Limitations Due to Data Access:** In conducting this analysis, restricted access to specific data types posed a limitation on the depth of insights achievable. Due to privacy and legal considerations, personal member information, such as demographic details (e.g., age, gender), names, and other identifying information, was not accessible. Additionally, key membership-specific data, like the duration of each member’s membership, was unavailable.
+
+The absence of this data constrained the ability to perform segmented analyses that could reveal nuanced insights into member satisfaction and engagement across different demographics or based on membership tenure. For instance, with data on membership duration, it would be possible to examine trends in satisfaction over time, potentially identifying factors that influence member loyalty and retention. Should this data become accessible in the future, incorporating these variables could allow for a more targeted and comprehensive analysis, providing valuable insights to inform strategic decision-making aimed at enhancing member engagement and satisfaction.
+
+In summary, these limitations highlight key areas that may have influenced the findings of this analysis. Addressing issues such as uneven member representation, survey response options, focus group size, and the predominance of categorical data could significantly enhance the robustness and accuracy of future insights. By mitigating these challenges, future research can provide a more comprehensive and detailed understanding of member preferences and behaviors, ultimately informing more effective strategic decisions.
+
+
+## Future Step
+
+To continue improving membership engagement and satisfaction, Heritage New Zealand Pouhere Taonga can take several actionable steps based on the current survey data, as well as explore further analysis opportunities by leveraging additional data sources.
+
+**1. Expand to Other Membership Types:** Heritage New Zealand could consider expanding its membership by targeting new, underrepresented demographics to diversify its member base. Future initiatives could include gathering more information on the interests and activity preferences of potential members, particularly those in younger age groups or family demographics. By developing tailored offerings that align with these interests, Heritage New Zealand can appeal to a broader audience, enhancing community engagement and ensuring sustained membership growth.
+
+**2. Enhance Loyalty Among Existing Members:** Retaining current members is crucial for the long-term success of Heritage New Zealand. Future work should continue to focus on loyalty enhancement by regularly assessing member feedback to identify areas where benefits may be improved or supplemented. Providing exclusive content, access to special events, or personalised perks based on member preferences can foster stronger connections between members and Heritage New Zealand, helping to improve retention and build long-term loyalty.
+
+**3. Offer Flexible Membership Options:** Offering flexible membership options could better meet the diverse needs and financial situations of Heritage New Zealand’s members. By introducing tiered membership options—such as plans that include or exclude certain benefits, like magazine subscriptions—or by adjusting the frequency of benefits to occur three times per year instead of monthly, Heritage New Zealand could make membership more affordable and appealing to a wider range of individuals. This flexibility would allow members to personalise their experience, likely increasing both satisfaction and the overall appeal of membership.
+
+**4. Conduct Comprehensive Text Analysis:** While quantitative data provides useful insights, a more in-depth analysis of qualitative data, such as text responses from surveys and focus groups, could reveal deeper aspects of member satisfaction, motivations, and areas for improvement. This type of analysis may be time-intensive but is invaluable for capturing nuances in member sentiment that are not always reflected in numerical data. Techniques like sentiment analysis or thematic coding could identify recurring themes and specific concerns expressed by members, ultimately contributing to a more holistic understanding of their needs and preferences.
+
+**5. Develop a Standardised Membership Survey:** Designing a standardised, comprehensive membership survey to be conducted annually would allow for consistent, reliable data collection on satisfaction, interests, and preferences. By using reproducible code to analyse this data, the organisation can streamline the evaluation process and track key trends over time. Consistent data collection enables year-over-year comparisons, highlighting shifts in member expectations and satisfaction. This approach provides a clear picture of membership dynamics, allowing Hertiage Newzealand to make informed adjustments that enhance the value of membership.
+
+**6. Establish an Improvement Plan:** Using the insights generated from both quantitative and qualitative analyses, create a concrete action plan that addresses identified areas for improvement. This improvement plan should outline specific actions to enhance member satisfaction, identify metrics to measure success, and set timelines for implementation. To ensure continued relevance, the organisation should regularly update this plan based on fresh data and evolving member expectations. By establishing a structured process for improvement, Heritage Newzealand can respond proactively to feedback and align its offerings with the changing needs of its members.
+
+**Leveraging Additional Data for Deeper Insights** 
+
+While this project has provided valuable insights into membership preferences and satisfaction, the analysis was limited by the data available. For future analysis, we recommend leveraging additional data, such as member tenure, demographics, and participation frequency, to gain a more nuanced understanding of the membership base. Here are some specific suggestions:
+
+**1. Segmenting by Length of Membership:** If data on how long each member has been with Heritage New Zealand Pouhere Taonga is available, similar analyses could be conducted by breaking down results according to membership duration. This segmentation would allow us to identify differences in satisfaction and engagement between newer and longer-term members, helping to tailor engagement strategies more effectively.
+
+**2. Demographic-Based Analysis:** Access to demographic details such as age, location, and family status would enable targeted analysis of member preferences. This could reveal distinct needs and preferences across different member demographics, informing more personalised membership offerings.
+
+**3. Engagement Frequency Analysis:** If records of individual engagement activities (e.g., event attendance, purchases, and heritage site visits) are available, future studies could examine how varying levels of engagement influence overall satisfaction and retention. This insight would provide a clearer picture of how active participation correlates with loyalty.
+
+**4. Longitudinal Analysis:** With access to historical data on member engagement and satisfaction, a longitudinal analysis could be conducted to observe trends over time. This could help Heritage New Zealand understand evolving preferences and measure the impact of changes in the membership program.
+
+
+# Conclusion
+
+This project provides Heritage New Zealand Pouhere Taonga with valuable insights into its membership program, identifying key areas for enhancing engagement, satisfaction, and growth. By combining survey data and focus group feedback, we explored the diverse needs and preferences of members, shedding light on which benefits resonate most and which areas could benefit from strategic refinement.
+
+Our analysis revealed a strong commitment among members to Heritage New Zealand’s mission of preserving cultural heritage, with many expressing a deep appreciation for access to heritage sites and the opportunity to support the organisation’s conservation efforts. However, the findings also highlighted specific areas for improvement, such as enhancing engagement with underrepresented groups, tailoring benefits to different membership types, and expanding flexible membership options. Additionally, pricing analysis showed that the current price points, particularly in the $70–$100 range, are generally perceived as reasonable by members. Small adjustments to pricing tiers and more flexible membership options could increase affordability and appeal, especially for younger demographics and families.
+
+To support these insights, we developed an interactive Shiny dashboard that enables Heritage New Zealand to visualise and explore survey responses in an accessible, structured format. The dashboard allows the organisation to interactively review responses to key survey questions, helping decision-makers track trends and identify areas for improvement. While it does not include focus group feedback, the app provides a central resource for ongoing exploration of member feedback, offering actionable insights for data-driven decision-making.
+
+Limitations in data access, such as the lack of demographic and membership tenure information, presented some constraints on the analysis. Yet, these challenges underscore opportunities for future research and deeper data integration that could support more nuanced segmentation and targeted engagement strategies. In addition, a structured, annual approach to data collection through standardised surveys could enable Heritage New Zealand to track shifts in member expectations over time, fostering a proactive approach to program improvement.
+
+In conclusion, this project equips Heritage New Zealand Pouhere Taonga with a data-driven framework for ongoing enhancement of its membership offerings. By acting on these insights and leveraging the Shiny dashboard for interactive survey analysis, the organisation can strengthen member retention, adjust pricing to increase accessibility, attract new demographics, and continue fostering a community committed to preserving New Zealand’s cultural heritage.
+
+
+\pagebreak
